@@ -81,28 +81,28 @@ class matrix
 		matrix<data> col(size_t n) const;
 
 		template<typename type>
-		matrix<data> operator+ (const matrix<type>& other);
+		matrix<data> operator+ (const matrix<type>& other) const;
 
 		template<typename type>
-		matrix<data> operator- (const matrix<type>& other);
+		matrix<data> operator- (const matrix<type>& other) const;
 
 		template<typename type>
-		matrix<data> operator* (const matrix<type>& other);
+		matrix<data> operator* (const matrix<type>& other) const;
 
 		template<typename type>
-		matrix<data> operator/ (const matrix<type>& other);
+		matrix<data> operator/ (const matrix<type>& other) const;
 
 		template<typename type>
-		matrix<data> operator+ (const type& other);
+		matrix<data> operator+ (const type& other) const;
 
 		template<typename type>
-		matrix<data> operator- (const type& other);
+		matrix<data> operator- (const type& other) const;
 
 		template<typename type>
-		matrix<data> operator* (const type& other);
+		matrix<data> operator* (const type& other) const;
 
 		template<typename type>
-		matrix<data> operator/ (const type& other);
+		matrix<data> operator/ (const type& other) const;
 
 		template<typename type>
 		matrix<data>& operator+= (const matrix<type>& other);
@@ -131,6 +131,12 @@ class matrix
 		template<typename type>
 		matrix<data>& operator= (const matrix<type>& other);
 
+		template<typename type>
+		bool operator== (const matrix<type>& other) const;
+
+		template<typename type>
+		bool operator!= (const matrix<type>& other) const;
+
 		matrix<data>& operator= (const matrix<data>& other);
 		matrix<data>& operator= (matrix<data>&& other);
 
@@ -138,6 +144,8 @@ class matrix
 
 };
 
+#ifndef MATRIX_CPP
 #include "matrix.cpp"
+#endif
 
 #endif // MATRIX_HPP

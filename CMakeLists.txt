@@ -1,11 +1,34 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(Simple-Matrix-Lib LANGUAGES CXX)
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(Simple-Matrix-Lib main.cpp matrix.hpp)
+find_package(OpenMP)
+include_directories(${OpenMP_INCLUDE_DIR})
+link_directories(${OpenMP_LIBRARY_DIR})
 
-install(TARGETS Simple-Matrix-Lib
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+add_library(${PROJECT_NAME} matrix.cpp matrix.hpp)
+add_executable(test_main main.cpp)
+add_executable(test_add addtest.cpp)
+add_executable(test_sub subtest.cpp)
+add_executable(test_mul multest.cpp)
+add_executable(test_sta statest.cpp)
+
+target_link_libraries(${PROJECT_NAME} ${OpenMP_LIBRARIES})
+target_link_libraries(test_main ${OpenMP_LIBRARIES})
+target_link_libraries(test_add ${OpenMP_LIBRARIES})
+target_link_libraries(test_sub ${OpenMP_LIBRARIES})
+target_link_libraries(test_mul ${OpenMP_LIBRARIES})
+target_link_libraries(test_sta ${OpenMP_LIBRARIES})
+
+add_test(NAME main COMMAND test_main)
+add_test(NAME addition COMMAND test_add)
+add_test(NAME substraction COMMAND test_sub)
+add_test(NAME multiplication COMMAND test_mul)
+add_test(NAME statistics COMMAND test_sta)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")

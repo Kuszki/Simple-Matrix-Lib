@@ -18,42 +18,44 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <iostream>
-
 #include "matrix.cpp"
 
-template<typename data>
-void print_matrix(const matrix<data>& m)
+bool comp(double a, double b, double max_diff = 0.01)
 {
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			std::cout << m.get(i, j) << "\t";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
+	return std::abs(a - b) < max_diff;
 }
 
 int main(int argc, char* args[])
 {
-	matrix<double> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
-	matrix<double> b(2, 3, { 1, 2, 3, 4, 5, 6});
+	const matrix<double> a(3, 5, { 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 11, 11, 12, 17, 18 });
 
-	auto c = a * b;
+	if (!comp(a.mean(), 8.467)) return 1;
+	if (!comp(a.var(), 25.124)) return 2;
+	if (!comp(a.std(), 5.0124)) return 3;
 
-	print_matrix(b);
-	print_matrix(a);
-	print_matrix(c);
-	print_matrix(c + c);
+	if (!comp(a.mean(0, decltype(a)::mode::rows), 3.20)) return 4;
+	if (!comp(a.mean(1, decltype(a)::mode::rows), 8.40)) return 5;
+	if (!comp(a.mean(2, decltype(a)::mode::rows), 13.8)) return 6;
 
-	const matrix<double> g(3, 5, { 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 11, 11, 12, 17, 18 });
-	print_matrix(g);
+	if (!comp(a.std(0, decltype(a)::mode::rows), 1.30384)) return 7;
+	if (!comp(a.std(1, decltype(a)::mode::rows), 2.07364)) return 8;
+	if (!comp(a.std(2, decltype(a)::mode::rows), 3.42053)) return 9;
 
-	std::cout << g.var(0, decltype(g)::mode::rows) << std::endl;
-	std::cout << g.var(1, decltype(g)::mode::rows) << std::endl;
-	std::cout << g.var(2, decltype(g)::mode::rows) << std::endl;
+	if (!comp(a.var(0, decltype(a)::mode::rows), 1.70)) return 10;
+	if (!comp(a.var(1, decltype(a)::mode::rows), 4.30)) return 11;
+	if (!comp(a.var(2, decltype(a)::mode::rows), 11.7)) return 12;
+
+	if (!comp(a.mean(0, decltype(a)::mode::cols), 6.3333)) return 13;
+	if (!comp(a.mean(2, decltype(a)::mode::cols), 7.6667)) return 14;
+	if (!comp(a.mean(4, decltype(a)::mode::cols), 11.333)) return 15;
+
+	if (!comp(a.std(0, decltype(a)::mode::cols), 4.5092)) return 16;
+	if (!comp(a.std(2, decltype(a)::mode::cols), 4.5092)) return 17;
+	if (!comp(a.std(4, decltype(a)::mode::cols), 6.5064)) return 18;
+
+	if (!comp(a.var(0, decltype(a)::mode::cols), 20.333)) return 19;
+	if (!comp(a.var(2, decltype(a)::mode::cols), 20.333)) return 20;
+	if (!comp(a.var(4, decltype(a)::mode::cols), 42.333)) return 21;
 
 	return 0;
 }

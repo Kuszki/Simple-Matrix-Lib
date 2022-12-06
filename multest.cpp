@@ -18,42 +18,25 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <iostream>
-
 #include "matrix.cpp"
-
-template<typename data>
-void print_matrix(const matrix<data>& m)
-{
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			std::cout << m.get(i, j) << "\t";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-}
 
 int main(int argc, char* args[])
 {
-	matrix<double> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
-	matrix<double> b(2, 3, { 1, 2, 3, 4, 5, 6});
+	const matrix<int> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
+	const matrix<int> b(2, 3, { 1, 2, 3, 4, 5, 6});
 
-	auto c = a * b;
+	const matrix<int> r1(4, 3, { 9, 12, 15, 19, 26, 33, 29, 40, 51, 39, 54, 69 });
+	const matrix<int> r2(4, 2, { 2, 4, 6, 8, 10, 12, 14, 16 });
 
-	print_matrix(b);
-	print_matrix(a);
-	print_matrix(c);
-	print_matrix(c + c);
+	const auto c = a * b;
+	auto d = a; d *= b;
 
-	const matrix<double> g(3, 5, { 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 11, 11, 12, 17, 18 });
-	print_matrix(g);
+	if (r1 != c || r1 != d) return -1;
 
-	std::cout << g.var(0, decltype(g)::mode::rows) << std::endl;
-	std::cout << g.var(1, decltype(g)::mode::rows) << std::endl;
-	std::cout << g.var(2, decltype(g)::mode::rows) << std::endl;
+	const auto e = a * 2;
+	auto f = a; f *= 2;
+
+	if (r2 != e || r2 != f) return -2;
 
 	return 0;
 }
