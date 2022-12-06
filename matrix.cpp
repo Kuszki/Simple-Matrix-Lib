@@ -96,7 +96,9 @@ data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
 			const size_t count = m_rows * m_cols;
 
 			if (count <= 1) return m_ptr[0];
-			else for (size_t i = 0; i < count; ++i)
+
+               #pragma omp parallel for reduction(+:out)
+			for (size_t i = 0; i < count; ++i)
 			{
 				out += m_ptr[i];
 			}
@@ -108,7 +110,9 @@ data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
 		{
 			if (n >= m_rows) return out;
 			else if (m_cols <= 1) return get(n, m_cols);
-			else for (size_t i = 0; i < m_cols; ++i)
+
+               #pragma omp parallel for reduction(+:out)
+			for (size_t i = 0; i < m_cols; ++i)
 			{
 				out += get(n, i);
 			}
@@ -120,7 +124,9 @@ data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
 		{
 			if (n >= m_cols) return out;
 			else if (m_rows <= 1) return get(m_rows, n);
-			else for (size_t i = 0; i < m_rows; ++i)
+
+               #pragma omp parallel for reduction(+:out)
+			for (size_t i = 0; i < m_rows; ++i)
 			{
 				out += get(i, n);
 			}
@@ -147,10 +153,14 @@ data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 			const size_t count = m_rows * m_cols;
 
 			if (count == 1) return 0.0;
-			else for (size_t i = 0; i < count; ++i)
+
+               #pragma omp parallel for reduction(+:out)
+			for (size_t i = 0; i < count; ++i)
 			{
-				const data diff = m_ptr[i] - m;
-				out = out + diff * diff;
+				data diff = m_ptr[i] - m;
+
+				diff = diff * diff;
+				out += diff;
 			}
 
 			return out / data(count - 1);
@@ -160,10 +170,14 @@ data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 		{
 			if (n >= m_rows) return out;
 			else if (m_cols == 1) return 0.0;
-			else for (size_t i = 0; i < m_cols; ++i)
+
+               #pragma omp parallel for reduction(+:out)
+			for (size_t i = 0; i < m_cols; ++i)
 			{
-				const data diff = get(n, i) - m;
-				out = out + diff * diff;
+				data diff = get(n, i) - m;
+
+				diff = diff * diff;
+				out += diff;
 			}
 
 			return out / data(m_cols - 1);
@@ -173,10 +187,14 @@ data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 		{
 			if (n >= m_cols) return out;
 			else if (m_rows == 1) return 0.0;
-			else for (size_t i = 0; i < m_rows; ++i)
+
+               #pragma omp parallel for reduction(+:out)
+			for (size_t i = 0; i < m_rows; ++i)
 			{
-				const data diff = get(i, n) - m;
-				out = out + diff * diff;
+				data diff = get(i, n) - m;
+
+				diff = diff * diff;
+				out += diff;
 			}
 
 			return out / data(m_rows - 1);
@@ -371,11 +389,11 @@ matrix<data> matrix<data>::operator* (const matrix<type>& other) const
 
 	matrix<data> res(m_rows, other.m_cols);
 
-     #pragma omp parallel for collapse(1)
+     #pragma omp parallel for collapse(2)
 	for (size_t i = 0; i < res.m_cols; ++i)
 		for (size_t j = 0; j < res.m_rows; ++j)
 			for (size_t k = 0; k < m_cols; ++k)
-				res.get(j, i) += get(j, k)*other.get(k, i);
+				res.get(j, i) += get(j, k) * other.get(k, i);
 
 	return res;
 }
@@ -473,7 +491,7 @@ matrix<data>& matrix<data>::operator*= (const matrix<type>& other)
 
 	matrix<data> res(m_rows, other.m_cols);
 
-     #pragma omp parallel for collapse(1)
+     #pragma omp parallel for collapse(2)
 	for (size_t i = 0; i < res.m_cols; ++i)
 		for (size_t j = 0; j < res.m_rows; ++j)
 			for (size_t k = 0; k < m_cols; ++k)
