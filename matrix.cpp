@@ -825,20 +825,4 @@ matrix<data>::~matrix(void)
 	if (m_ptr) std::free(m_ptr);
 }
 
-template class matrix<float>;
-template class matrix<double>;
-template class matrix<long double>;
-
-template class matrix<int>;
-template class matrix<unsigned>;
-
-template class matrix<short int>;
-template class matrix<short unsigned>;
-
-template class matrix<long int>;
-template class matrix<long unsigned>;
-
-template class matrix<long long int>;
-template class matrix<long long unsigned>;
-
 #endif

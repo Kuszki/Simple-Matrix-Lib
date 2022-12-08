@@ -24,6 +24,8 @@
 
 #include "matrix.hpp"
 
+// -mlong-double-128 -lquadmath
+
 template<typename data>
 void print_matrix(const matrix<data>& m)
 {
@@ -32,6 +34,20 @@ void print_matrix(const matrix<data>& m)
 		for (int j = 0; j < m.cols(); ++j)
 		{
 			std::cout << m(i, j) << "\t";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
+
+template<>
+void print_matrix(const matrix<long double>& m)
+{
+	for (int i = 0; i < m.rows(); ++i)
+	{
+		for (int j = 0; j < m.cols(); ++j)
+		{
+			std::cout << static_cast<double>(m(i, j)) << "\t";
 		}
 		std::cout << std::endl;
 	}
@@ -74,5 +90,27 @@ void randomize_matrix(matrix<data>& m, data min, data max)
 
 int main(int argc, char* args[])
 {
+	std::cout.precision(3);
+
+	matrix<long double> m1(5, 5);
+
+	randomize_matrix(m1, -10.0l, 10.0l);
+	print_matrix(m1);
+
+	matrix<long double> diff = m1 - matrix<int>(m1);
+
+	print_matrix(diff);
+
+	std::cout << sizeof(__float128) << std::endl;
+	std::cout << sizeof(long double) << std::endl;
+	std::cout << sizeof(double) << std::endl;
+	std::cout << sizeof(float) << std::endl;
+	std::cout << "======\n";
+	std::cout << sizeof(char) << std::endl;
+	std::cout << sizeof(short) << std::endl;
+	std::cout << sizeof(int) << std::endl;
+	std::cout << sizeof(long) << std::endl;
+	std::cout << sizeof(long long) << std::endl;
+
 	return 0;
 }
