@@ -26,6 +26,12 @@
 #endif
 
 template<typename data>
+matrix<data>::matrix(const std::string& file)
+{
+	load(file);
+}
+
+template<typename data>
 matrix<data>::matrix(const std::initializer_list<data>& list)
 {
 	resize(1, list.size()); size_t i = 0;
@@ -269,7 +275,7 @@ bool matrix<data>::resize(size_t rows, size_t cols)
 
 	const size_t count = cols*rows;
 
-	m_ptr = new data[count];
+	m_ptr = static_cast<data*>(std::malloc(count * sizeof(data)));
 	m_cols = cols;
 	m_rows = rows;
 
@@ -279,7 +285,7 @@ bool matrix<data>::resize(size_t rows, size_t cols)
 template<typename data>
 bool matrix<data>::clear(void)
 {
-	if (m_ptr) delete [] m_ptr;
+	if (m_ptr) std::free(m_ptr);
 	else return false;
 
 	m_cols = m_rows = 0;
@@ -318,6 +324,88 @@ bool matrix<data>::is_square(void) const
 }
 
 template<typename data>
+bool matrix<data>::load(const std::string& path)
+{
+	std::ifstream file(path);
+
+	return load(file);
+}
+
+template<typename data>
+bool matrix<data>::save(const std::string& path, std::streamsize prec) const
+{
+	std::ofstream file(path);
+	file.precision(prec);
+
+	return save(file);
+}
+
+template<typename data>
+bool matrix<data>::load(std::istream& stream)
+{
+	if (!stream.good()) return false;
+
+	size_t count = 0, cnum = 0, step;
+	size_t length = step = 1024;
+	double val = 0.0;
+
+	data* ptr = static_cast<data*>(std::malloc(length * sizeof(data)));
+
+	while (stream >> val)
+	{
+		ptr[count++] = val;
+
+		if (count == length)
+		{
+			data* old = ptr;
+
+			length += step;
+			ptr = static_cast<data*>(std::realloc(ptr, length * sizeof(data)));
+			step *= 2;
+
+			if (!ptr)
+			{
+				std::free(old);
+
+				return false;
+			}
+		}
+
+		if (cnum == 0)
+		{
+			char c = '\0'; stream.get(c);
+			if (c == '\n') cnum = count;
+		}
+	}
+
+	if (cnum) count -= count % cnum;
+	else cnum = count;
+
+	if (count) ptr = static_cast<data*>(std::realloc(ptr, count * sizeof(data)));
+	else if (ptr) { std::free(ptr); ptr = nullptr; }
+
+	if (ptr) clear(); else return false;
+
+	m_ptr = ptr;
+	m_rows = count / cnum;
+	m_cols = cnum;
+
+	return true;
+}
+
+template<typename data>
+bool matrix<data>::save(std::ostream& stream) const
+{
+	if (!stream.good()) return false;
+
+	for (size_t i = 0; i < m_rows; ++i)
+		for (size_t j = 0; j < m_cols; ++j)
+			stream << get_val(i, j) << (j+1 == m_cols ? '\n' : ' ');
+
+	return !stream.fail();
+}
+
+template<typename data>
 size_t matrix<data>::rows(void) const
 {
 	return m_rows;
@@ -343,7 +431,7 @@ matrix<data> matrix<data>::submatrix(size_t row, size_t col) const
 
 	matrix<data> res(m_rows - 1, m_cols - 1);
 
-	//#pragma omp parallel for collapse(2)
+     #pragma omp parallel for collapse(2)
 	for (size_t i = 0; i < m_rows; ++i)
 		for (size_t j = 0; j < m_cols; ++j)
 		{
@@ -734,7 +822,7 @@ bool matrix<data>::operator!= (const matrix<type>& other) const
 template<typename data>
 matrix<data>::~matrix(void)
 {
-	if (m_ptr) delete [] m_ptr;
+	if (m_ptr) std::free(m_ptr);
 }
 
 template class matrix<float>;

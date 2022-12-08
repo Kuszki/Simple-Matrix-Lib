@@ -22,6 +22,8 @@
 #define MATRIX_HPP
 
 #include <utility>
+#include <fstream>
+#include <string>
 
 #include <cstddef>
 #include <cmath>
@@ -45,6 +47,8 @@ class matrix
 		size_t m_rows = 0;
 
 	public:
+
+		explicit matrix(const std::string& file);
 
 		matrix(const std::initializer_list<data>& list);
 		matrix(const std::initializer_list<std::initializer_list<data>>& list);
@@ -81,6 +85,12 @@ class matrix
 		bool is_valid(void) const;
 		bool is_vector(void) const;
 		bool is_square(void) const;
+
+		bool load(const std::string& path);
+		bool save(const std::string& path, std::streamsize prec = 6) const;
+
+		bool load(std::istream& stream);
+		bool save(std::ostream& stream) const;
 
 		matrix<data> submatrix(size_t row, size_t col) const;
 		matrix<data> transpose(void) const;

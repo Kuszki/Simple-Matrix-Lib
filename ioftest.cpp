@@ -18,61 +18,28 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#define debugmsg std::cout << "Test " << __FILE__ << " failed at line " << __LINE__ << std::endl
+#define endtest(num, ok) { debugmsg; ++num; } else { ++num; ++ok; }
+
 #include <iostream>
-#include <fstream>
-#include <random>
 
 #include "matrix.hpp"
 
-template<typename data>
-void print_matrix(const matrix<data>& m)
-{
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			std::cout << m(i, j) << "\t";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-}
-
-template<typename data>
-requires std::is_floating_point_v<data>
-void randomize_matrix(matrix<data>& m, data min, data max)
-{
-	std::uniform_real_distribution<data> dis(min, max);
-	std::random_device rd;
-	std::mt19937 gen(rd());
-
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			m(i, j) = dis(gen);
-		}
-	}
-}
-
-template<typename data>
-requires std::is_integral_v<data>
-void randomize_matrix(matrix<data>& m, data min, data max)
-{
-	std::uniform_int_distribution<data> dis(min, max);
-	std::random_device rd;
-	std::mt19937 gen(rd());
-
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			m(i, j) = dis(gen);
-		}
-	}
-}
-
 int main(int argc, char* args[])
 {
-	return 0;
+	int n = 0, ok = 0;
+
+	const matrix<int> a(2, 2, { 1, 2, 3, 4 });
+	const matrix<int> b(1, 1, { 5 });
+	const matrix<int> c(2, 1, { 1, 2 });
+	const matrix<int> d(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 10 });
+	const matrix<int> e(4, 4, { 9, 3, 3, 4, 5, 6, 7, 8, 9, 11, 11, 12, 13, 14, 15, 16 });
+
+	if (!a.save("a.txt") || a != matrix<int>("a.txt")) endtest(n, ok);
+	if (!b.save("b.txt") || b != matrix<int>("b.txt")) endtest(n, ok);
+	if (!c.save("c.txt") || c != matrix<int>("c.txt")) endtest(n, ok);
+	if (!d.save("d.txt") || d != matrix<int>("d.txt")) endtest(n, ok);
+	if (!e.save("e.txt") || e != matrix<int>("e.txt")) endtest(n, ok);
+
+	return !(n == ok);
 }
