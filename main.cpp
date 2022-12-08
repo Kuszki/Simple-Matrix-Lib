@@ -19,6 +19,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include <iostream>
+#include <random>
 
 #include "matrix.cpp"
 
@@ -29,31 +30,48 @@ void print_matrix(const matrix<data>& m)
 	{
 		for (int j = 0; j < m.cols(); ++j)
 		{
-			std::cout << m.get(i, j) << "\t";
+			std::cout << m(i, j) << "\t";
 		}
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
 }
 
+template<typename data>
+requires std::is_floating_point_v<data>
+void randomize_matrix(matrix<data>& m, data min, data max)
+{
+	std::uniform_real_distribution<data> dis(min, max);
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	for (int i = 0; i < m.rows(); ++i)
+	{
+		for (int j = 0; j < m.cols(); ++j)
+		{
+			m(i, j) = dis(gen);
+		}
+	}
+}
+
+template<typename data>
+requires std::is_integral_v<data>
+void randomize_matrix(matrix<data>& m, data min, data max)
+{
+	std::uniform_int_distribution<data> dis(min, max);
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	for (int i = 0; i < m.rows(); ++i)
+	{
+		for (int j = 0; j < m.cols(); ++j)
+		{
+			m(i, j) = dis(gen);
+		}
+	}
+}
+
 int main(int argc, char* args[])
 {
-	matrix<double> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
-	matrix<double> b(2, 3, { 1, 2, 3, 4, 5, 6});
-
-	auto c = a * b;
-
-	print_matrix(b);
-	print_matrix(a);
-	print_matrix(c);
-	print_matrix(c + c);
-
-	const matrix<double> g(3, 5, { 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 11, 11, 12, 17, 18 });
-	print_matrix(g);
-
-	std::cout << g.var(0, decltype(g)::mode::rows) << std::endl;
-	std::cout << g.var(1, decltype(g)::mode::rows) << std::endl;
-	std::cout << g.var(2, decltype(g)::mode::rows) << std::endl;
-
 	return 0;
 }

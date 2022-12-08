@@ -46,8 +46,13 @@ class matrix
 
 	public:
 
-		matrix(size_t rows, size_t cols, const data& val = 0.0);
+		matrix(const std::initializer_list<data>& list);
+		matrix(const std::initializer_list<std::initializer_list<data>>& list);
+
+		matrix(size_t rows, size_t cols, const data ptr[]);
+		matrix(size_t rows, size_t cols, const data& val = data());
 		matrix(size_t rows, size_t cols, const std::initializer_list<data>& list);
+
 		matrix(void) = default;
 
 		matrix(const matrix<data>& other);
@@ -56,29 +61,42 @@ class matrix
 		template<typename type>
 		matrix(const matrix<type>& other);
 
-		virtual ~matrix(void);
+		data& get_val(size_t row, size_t col);
+		data get_val(size_t row, size_t col, data def = data()) const;
+		bool set_val(size_t row, size_t col, const data& val);
 
-		data& get(size_t row, size_t col);
-		bool set(size_t row, size_t col, const data& val);
+		matrix<data> get_row(size_t n) const;
+		matrix<data> get_col(size_t n) const;
 
-		data get(size_t row, size_t col) const;
-		data mean(size_t n = 0, mode mod = mode::all) const;
-		data var(size_t n = 0, mode mod = mode::all) const;
-		data std(size_t n = 0, mode mod = mode::all) const;
+		size_t rows(void) const;
+		size_t cols(void) const;
+		size_t size(void) const;
 
 		bool resize(size_t rows, size_t cols);
 		bool clear(void);
 
+		bool is_valid(size_t row, size_t col) const;
+
+		bool is_empty(void) const;
 		bool is_valid(void) const;
 		bool is_vector(void) const;
 		bool is_square(void) const;
 
-		size_t rows(void) const;
-		size_t cols(void) const;
-
+		matrix<data> submatrix(size_t row, size_t col) const;
 		matrix<data> transpose(void) const;
-		matrix<data> row(size_t n) const;
-		matrix<data> col(size_t n) const;
+		matrix<data> diagonal(void) const;
+
+		data mean(size_t n = 0, mode mod = mode::all) const;
+		data var(size_t n = 0, mode mod = mode::all) const;
+		data std(size_t n = 0, mode mod = mode::all) const;
+
+		data det(void) const;
+
+		template<typename type>
+		bool set_row(size_t n, const matrix<type>& other);
+
+		template<typename type>
+		bool set_col(size_t n, const matrix<type>& other);
 
 		template<typename type>
 		matrix<data> operator+ (const matrix<type>& other) const;
@@ -140,7 +158,14 @@ class matrix
 		matrix<data>& operator= (const matrix<data>& other);
 		matrix<data>& operator= (matrix<data>&& other);
 
+		data& operator() (size_t row, size_t col);
+		data operator() (size_t row, size_t col) const;
+
+		matrix<data> operator- (void) const;
+
 		template<typename type> friend class matrix;
+
+		virtual ~matrix(void);
 
 };
 

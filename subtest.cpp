@@ -18,10 +18,16 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "matrix.cpp"
+#define debugmsg std::cout << "Test " << __FILE__ << " failed at line " << __LINE__ << std::endl
+#define endtest(num, ok) { debugmsg; ++num; } else { ++num; ++ok; }
 
-int main(int, char*[])
+#include "matrix.cpp"
+#include <iostream>
+
+int main(int argc, char* args[])
 {
+	int n = 0, ok = 0;
+
 	const matrix<int> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
 	const matrix<int> b(4, 2, { 1, 0, 1, 2, 3, 4, 5, 6 });
 
@@ -31,12 +37,12 @@ int main(int, char*[])
 	const auto c = a - b;
 	auto d = a; d -= b;
 
-	if (r1 != c || r1 != d) return -1;
+	if (r1 != c || r1 != d) endtest(n, ok);
 
 	const auto e = a - 10;
 	auto f = a; f -= 10;
 
-	if (r2 != e || r2 != f) return -2;
+	if (r2 != e || r2 != f) endtest(n, ok);
 
-	return 0;
+	return !(n == ok);
 }

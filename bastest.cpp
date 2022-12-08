@@ -24,44 +24,38 @@
 #include "matrix.cpp"
 #include <iostream>
 
-bool comp(double a, double b, double max_diff = 0.01)
-{
-	return std::abs(a - b) < max_diff;
-}
-
 int main(int argc, char* args[])
 {
 	int n = 0, ok = 0;
 
-	const matrix<double> a(3, 5, { 2, 2, 3, 4, 5, 6, 7, 8, 10, 11, 11, 11, 12, 17, 18 });
+	const matrix<int> a(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+	const matrix<int> b(2, 4, { 1, 2, 3, 4, 5, 6, 7, 8 });
+	const matrix<int> c(2, 4, { 0, 0, 0, 0, 0, 0, 0, 0 });
+	const matrix<int> d(1, 5, { 1, 2, 3, 4, 5 });
+	const matrix<int> e = {1, 2, 3, 4, 5};
+	const matrix<int> f = {{ 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 }};
 
-	if (!comp(a.mean(), 8.467)) endtest(n, ok);
-	if (!comp(a.var(), 25.124)) endtest(n, ok);
-	if (!comp(a.std(), 5.0124)) endtest(n, ok);
+	if (c != matrix<int>(2, 4)) endtest(n, ok);
+	if (d != e) endtest(n, ok);
+	if (f != a) endtest(n, ok);
 
-	if (!comp(a.mean(0, decltype(a)::mode::rows), 3.20)) endtest(n, ok);
-	if (!comp(a.mean(1, decltype(a)::mode::rows), 8.40)) endtest(n, ok);
-	if (!comp(a.mean(2, decltype(a)::mode::rows), 13.8)) endtest(n, ok);
+	if (a.is_square() != true) endtest(n, ok);
+	if (b.is_square() != false) endtest(n, ok);
 
-	if (!comp(a.std(0, decltype(a)::mode::rows), 1.30384)) endtest(n, ok);
-	if (!comp(a.std(1, decltype(a)::mode::rows), 2.07364)) endtest(n, ok);
-	if (!comp(a.std(2, decltype(a)::mode::rows), 3.42053)) endtest(n, ok);
+	if (a.rows() != 3 || a.cols() != 3) endtest(n, ok);
+	if (b.rows() != 2 || b.cols() != 4) endtest(n, ok);
 
-	if (!comp(a.var(0, decltype(a)::mode::rows), 1.70)) endtest(n, ok);
-	if (!comp(a.var(1, decltype(a)::mode::rows), 4.30)) endtest(n, ok);
-	if (!comp(a.var(2, decltype(a)::mode::rows), 11.7)) endtest(n, ok);
+	if (a.get_val(0, 0) != 1 || a.get_val(1, 2) != 6 ||
+	    a.get_val(2, 1) != 8 || a.get_val(2, 2) != 9) endtest(n, ok);
 
-	if (!comp(a.mean(0, decltype(a)::mode::cols), 6.3333)) endtest(n, ok);
-	if (!comp(a.mean(2, decltype(a)::mode::cols), 7.6667)) endtest(n, ok);
-	if (!comp(a.mean(4, decltype(a)::mode::cols), 11.333)) endtest(n, ok);
+	if (b.get_val(0, 0) != 1 || b.get_val(1, 3) != 8 ||
+	    b.get_val(1, 1) != 6 || b.get_val(1, 2) != 7) endtest(n, ok);
 
-	if (!comp(a.std(0, decltype(a)::mode::cols), 4.5092)) endtest(n, ok);
-	if (!comp(a.std(2, decltype(a)::mode::cols), 4.5092)) endtest(n, ok);
-	if (!comp(a.std(4, decltype(a)::mode::cols), 6.5064)) endtest(n, ok);
+	if (a.get_val(3, 1, -1) != -1 || b.get_val(1, 4, -2) != -2) endtest(n, ok);
 
-	if (!comp(a.var(0, decltype(a)::mode::cols), 20.333)) endtest(n, ok);
-	if (!comp(a.var(2, decltype(a)::mode::cols), 20.333)) endtest(n, ok);
-	if (!comp(a.var(4, decltype(a)::mode::cols), 42.333)) endtest(n, ok);
+	matrix<int> g = a; if (g != a || g(1, 1) != a(1, 1)) endtest(n, ok);
+
+	if (!g.set_val(1, 1, 666) || g.get_val(1, 1) != 666) endtest(n, ok);
 
 	return !(n == ok);
 }

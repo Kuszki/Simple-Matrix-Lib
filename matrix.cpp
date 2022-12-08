@@ -26,13 +26,40 @@
 #endif
 
 template<typename data>
+matrix<data>::matrix(const std::initializer_list<data>& list)
+{
+	resize(1, list.size()); size_t i = 0;
+
+	for (const auto& n : list) set_val(0, i++, n);
+}
+
+template<typename data>
+matrix<data>::matrix(const std::initializer_list<std::initializer_list<data>>& list)
+{
+	resize(list.size(), (*list.begin()).size());
+
+	for (size_t i = 0; const auto& r : list)
+	{
+		for (size_t j = 0; const auto& n : r) set_val(i, j++, n); ++i;
+	}
+}
+
+template<typename data>
+matrix<data>::matrix(size_t rows, size_t cols, const data ptr[])
+{
+	resize(rows, cols); const size_t count = rows*cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i) m_ptr[i] = ptr[i];
+}
+
+template<typename data>
 matrix<data>::matrix(size_t rows, size_t cols, const data& val)
 {
 	resize(rows, cols); const size_t count = rows*cols;
 
      #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] = val;
+	for (size_t i = 0; i < count; ++i) m_ptr[i] = val;
 }
 
 template<typename data>
@@ -63,30 +90,31 @@ matrix<data>::matrix(const matrix<type>& other)
 }
 
 template<typename data>
-data& matrix<data>::get(size_t row, size_t col)
+data& matrix<data>::get_val(size_t row, size_t col)
 {
 	return m_ptr[m_cols*row + col];
 }
 
 template<typename data>
-bool matrix<data>::set(size_t row, size_t col, const data& val)
+data matrix<data>::get_val(size_t row, size_t col, data def) const
 {
-	if (row > m_rows || col > m_cols) return false;
+	if (row >= m_rows || col >= m_cols) return def;
+	else return m_ptr[m_cols*row + col];
+}
+
+template<typename data>
+bool matrix<data>::set_val(size_t row, size_t col, const data& val)
+{
+	if (row >= m_rows || col >= m_cols) return false;
 	else m_ptr[m_cols*row + col] = val;
 
 	return true;
 }
 
 template<typename data>
-data matrix<data>::get(size_t row, size_t col) const
-{
-	return m_ptr[m_cols*row + col];
-}
-
-template<typename data>
 data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
 {
-	data out = 0.0;
+	data out = data();
 
 	if (m_ptr == nullptr) return out;
 	else switch (mod)
@@ -109,12 +137,12 @@ data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
 		case mode::rows:
 		{
 			if (n >= m_rows) return out;
-			else if (m_cols <= 1) return get(n, m_cols);
+			else if (m_cols <= 1) return get_val(n, m_cols);
 
                #pragma omp parallel for reduction(+:out)
 			for (size_t i = 0; i < m_cols; ++i)
 			{
-				out += get(n, i);
+				out += get_val(n, i);
 			}
 
 			return out / data(m_cols);
@@ -123,12 +151,12 @@ data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
 		case mode::cols:
 		{
 			if (n >= m_cols) return out;
-			else if (m_rows <= 1) return get(m_rows, n);
+			else if (m_rows <= 1) return get_val(m_rows, n);
 
                #pragma omp parallel for reduction(+:out)
 			for (size_t i = 0; i < m_rows; ++i)
 			{
-				out += get(i, n);
+				out += get_val(i, n);
 			}
 
 			return out / data(m_rows);
@@ -143,7 +171,7 @@ template<typename data>
 data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 {
 	const data m = mean(n, mod);
-	data out = 0.0;
+	data out = data();
 
 	if (m_ptr == nullptr) return out;
 	else switch (mod)
@@ -152,7 +180,7 @@ data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 		{
 			const size_t count = m_rows * m_cols;
 
-			if (count == 1) return 0.0;
+			if (count == 1) return data();
 
                #pragma omp parallel for reduction(+:out)
 			for (size_t i = 0; i < count; ++i)
@@ -169,12 +197,12 @@ data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 		case mode::rows:
 		{
 			if (n >= m_rows) return out;
-			else if (m_cols == 1) return 0.0;
+			else if (m_cols == 1) return data();
 
                #pragma omp parallel for reduction(+:out)
 			for (size_t i = 0; i < m_cols; ++i)
 			{
-				data diff = get(n, i) - m;
+				data diff = get_val(n, i) - m;
 
 				diff = diff * diff;
 				out += diff;
@@ -186,12 +214,12 @@ data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 		case mode::cols:
 		{
 			if (n >= m_cols) return out;
-			else if (m_rows == 1) return 0.0;
+			else if (m_rows == 1) return data();
 
                #pragma omp parallel for reduction(+:out)
 			for (size_t i = 0; i < m_rows; ++i)
 			{
-				data diff = get(i, n) - m;
+				data diff = get_val(i, n) - m;
 
 				diff = diff * diff;
 				out += diff;
@@ -209,6 +237,28 @@ template<typename data>
 data matrix<data>::std(size_t n, matrix<data>::mode mod) const
 {
 	return std::sqrt(var(n, mod));
+}
+
+template<typename data>
+data matrix<data>::det(void) const
+{
+	if (m_rows != m_cols) return data();
+	else if (m_rows == 1) return m_ptr[0];
+	else if (m_rows == 2) return
+	          m_ptr[0] * m_ptr[3] -
+	          m_ptr[1] * m_ptr[2];
+
+	data out = data();
+
+     #pragma omp parallel for reduction(+: out)
+	for (size_t i = 0; i < m_rows; ++i)
+	{
+		const data mul = (i+1) % 2 ? 1 : -1;
+
+		out += mul * get_val(0, i) * submatrix(0, i).det();
+	}
+
+	return out;
 }
 
 template<typename data>
@@ -235,6 +285,18 @@ bool matrix<data>::clear(void)
 	m_cols = m_rows = 0;
 
 	return true;
+}
+
+template<typename data>
+bool matrix<data>::is_valid(size_t row, size_t col) const
+{
+	return row < m_rows && col < m_cols;
+}
+
+template<typename data>
+bool matrix<data>::is_empty(void) const
+{
+	return m_ptr == nullptr;
 }
 
 template<typename data>
@@ -268,6 +330,35 @@ size_t matrix<data>::cols(void) const
 }
 
 template<typename data>
+size_t matrix<data>::size(void) const
+{
+	return m_rows * m_cols;
+}
+
+template<typename data>
+matrix<data> matrix<data>::submatrix(size_t row, size_t col) const
+{
+	if (m_cols < 2 || m_rows < 2) return matrix<data>();
+	else if (row >= m_rows || col >= m_cols) return *this;
+
+	matrix<data> res(m_rows - 1, m_cols - 1);
+
+	//#pragma omp parallel for collapse(2)
+	for (size_t i = 0; i < m_rows; ++i)
+		for (size_t j = 0; j < m_cols; ++j)
+		{
+			if (i == row || j == col) continue;
+
+			const size_t r = i < row ? i : i - 1;
+			const size_t c = j < col ? j : j - 1;
+
+			res.set_val(r, c, get_val(i, j));
+		}
+
+	return res;
+}
+
+template<typename data>
 matrix<data> matrix<data>::transpose(void) const
 {
 	matrix tmp(m_cols, m_rows);
@@ -275,33 +366,101 @@ matrix<data> matrix<data>::transpose(void) const
      #pragma omp parallel for collapse(2)
 	for (size_t i = 0; i < m_rows; ++i)
 		for (size_t j = 0; j < m_cols; ++j)
-			tmp.set(j, i, get(i, j));
+			tmp.set_val(j, i, get_val(i, j));
 
 	return tmp;
 }
 
 template<typename data>
-matrix<data> matrix<data>::row(size_t n) const
+matrix<data> matrix<data>::diagonal(void) const
 {
+	if (m_rows != m_cols) return matrix<data>();
+
 	matrix tmp(1, m_cols);
 
      #pragma omp parallel for
 	for (size_t i = 0; i < m_cols; ++i)
-		tmp.set(0, i, get(n, i));
+		tmp.set_val(0, i, get_val(i, i));
 
 	return tmp;
 }
 
 template<typename data>
-matrix<data> matrix<data>::col(size_t n) const
+matrix<data> matrix<data>::get_row(size_t n) const
 {
-	matrix tmp(m_rows, 1);
+	if (n >= m_rows) return matrix<data>();
+
+	matrix res(1, m_cols);
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < m_cols; ++i)
+		res.m_ptr[i] = get_val(n, i);
+
+	return res;
+}
+
+template<typename data>
+matrix<data> matrix<data>::get_col(size_t n) const
+{
+	if (n >= m_cols) return matrix<data>();
+
+	matrix res(m_rows, 1);
 
      #pragma omp parallel for
 	for (size_t i = 0; i < m_rows; ++i)
-		tmp.set(i, 0, get(i, n));
+		res.m_ptr[i] = get_val(i, n);
 
-	return tmp;
+	return res;
+}
+
+template<typename data>
+data& matrix<data>::operator()(size_t row, size_t col)
+{
+	return get_val(row, col);
+}
+
+template<typename data>
+data matrix<data>::operator()(size_t row, size_t col) const
+{
+	return get_val(row, col);
+}
+
+template<typename data>
+matrix<data> matrix<data>::operator- (void) const
+{
+	const size_t count = m_rows * m_cols;
+	matrix res(m_rows, m_cols);
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i) res.m_ptr[i] = -m_ptr[i];
+
+	return res;
+}
+
+template<typename data> template<typename type>
+bool matrix<data>::set_row(size_t n, const matrix<type>& other)
+{
+	if (n >= m_rows) return false;
+	if (other.m_rows != 1 && other.m_cols != 1) return false;
+	if (other.m_rows != m_cols && other.m_cols != m_cols) return false;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < m_cols; ++i) set_val(n, i, other.m_ptr[i]);
+
+	return true;
+}
+
+template<typename data> template<typename type>
+bool matrix<data>::set_col(size_t n, const matrix<type>& other)
+{
+	if (n >= m_cols) return false;
+	if (other.m_rows != 1 && other.m_cols != 1) return false;
+	if (other.m_rows != m_rows && other.m_cols != m_rows) return false;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < m_rows; ++i) set_val(i, n, other.m_ptr[i]);
+
+	return true;
 }
 
 template<typename data> template<typename type>
@@ -393,7 +552,7 @@ matrix<data> matrix<data>::operator* (const matrix<type>& other) const
 	for (size_t i = 0; i < res.m_cols; ++i)
 		for (size_t j = 0; j < res.m_rows; ++j)
 			for (size_t k = 0; k < m_cols; ++k)
-				res.get(j, i) += get(j, k) * other.get(k, i);
+				res.get_val(j, i) += get_val(j, k) * other.get_val(k, i);
 
 	return res;
 }
@@ -495,7 +654,7 @@ matrix<data>& matrix<data>::operator*= (const matrix<type>& other)
 	for (size_t i = 0; i < res.m_cols; ++i)
 		for (size_t j = 0; j < res.m_rows; ++j)
 			for (size_t k = 0; k < m_cols; ++k)
-				res.get(j, i) += get(j, k)*other.get(k, i);
+				res.get_val(j, i) += get_val(j, k)*other.get_val(k, i);
 
 	return *this = res;
 }
