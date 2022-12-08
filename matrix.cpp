@@ -511,7 +511,7 @@ template<typename data> template<typename type>
 matrix<data> matrix<data>::operator+ (const matrix<type>& other) const
 {
 	if (m_rows != other.m_rows ||
-	    m_cols != other.m_cols) return *this;
+	    m_cols != other.m_cols) return matrix<data>();
 
 	matrix<data> out(m_rows, m_cols);
 
@@ -528,7 +528,7 @@ template<typename data> template<typename type>
 matrix<data> matrix<data>::operator- (const matrix<type>& other) const
 {
 	if (m_rows != other.m_rows ||
-	    m_cols != other.m_cols) return *this;
+	    m_cols != other.m_cols) return matrix<data>();
 
 	matrix<data> out(m_rows, m_cols);
 
@@ -544,7 +544,7 @@ matrix<data> matrix<data>::operator- (const matrix<type>& other) const
 template<typename data> template<typename type>
 matrix<data> matrix<data>::operator* (const matrix<type>& other) const
 {
-	if (m_cols != other.m_rows) return *this;
+	if (m_cols != other.m_rows) return matrix<data>();
 
 	matrix<data> res(m_rows, other.m_cols);
 

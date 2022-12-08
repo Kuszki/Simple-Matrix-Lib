@@ -21,7 +21,7 @@
 #include <iostream>
 #include <random>
 
-#include "matrix.cpp"
+#include "matrix.hpp"
 
 template<typename data>
 void print_matrix(const matrix<data>& m)

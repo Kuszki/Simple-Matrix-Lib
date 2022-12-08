@@ -21,8 +21,9 @@
 #define debugmsg std::cout << "Test " << __FILE__ << " failed at line " << __LINE__ << std::endl
 #define endtest(num, ok) { debugmsg; ++num; } else { ++num; ++ok; }
 
-#include "matrix.cpp"
 #include <iostream>
+
+#include "matrix.hpp"
 
 int main(int, char*[])
 {
