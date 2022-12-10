@@ -18,27 +18,10 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <iostream>
-#include <fstream>
-#include <random>
-
 #include "matrix.hpp"
+#include "helper.hpp"
 
-// -mlong-double-128 -lquadmath
-
-template<typename data>
-void print_matrix(const matrix<data>& m)
-{
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			std::cout << m(i, j) << "\t";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-}
+// -mlong-double-128 -lquadmath -m128bit-long-double
 
 template<>
 void print_matrix(const matrix<long double>& m)
@@ -54,63 +37,45 @@ void print_matrix(const matrix<long double>& m)
 	std::cout << std::endl;
 }
 
-template<typename data>
-requires std::is_floating_point_v<data>
-void randomize_matrix(matrix<data>& m, data min, data max)
-{
-	std::uniform_real_distribution<data> dis(min, max);
-	std::random_device rd;
-	std::mt19937 gen(rd());
-
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			m(i, j) = dis(gen);
-		}
-	}
-}
-
-template<typename data>
-requires std::is_integral_v<data>
-void randomize_matrix(matrix<data>& m, data min, data max)
-{
-	std::uniform_int_distribution<data> dis(min, max);
-	std::random_device rd;
-	std::mt19937 gen(rd());
-
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			m(i, j) = dis(gen);
-		}
-	}
-}
-
 int main(int argc, char* args[])
 {
+	const size_t size = 128;
 	std::cout.precision(3);
 
-	matrix<long double> m1(5, 5);
+	matrix<float> mS1, mS2, mS3;
+	matrix<long double>
+	          mL1(size, size),
+	          mL2(size, size),
+	          mL3(size, size);
 
-	randomize_matrix(m1, -10.0l, 10.0l);
-	print_matrix(m1);
 
-	matrix<long double> diff = m1 - matrix<int>(m1);
+	randomize_matrix(mL1, -1.0l, 1.0l);
+	print_matrix(mS1 = mL1);
 
-	print_matrix(diff);
+	long double diff = 0.0;
 
-	std::cout << sizeof(__float128) << std::endl;
-	std::cout << sizeof(long double) << std::endl;
-	std::cout << sizeof(double) << std::endl;
-	std::cout << sizeof(float) << std::endl;
-	std::cout << "======\n";
-	std::cout << sizeof(char) << std::endl;
-	std::cout << sizeof(short) << std::endl;
-	std::cout << sizeof(int) << std::endl;
-	std::cout << sizeof(long) << std::endl;
-	std::cout << sizeof(long long) << std::endl;
+	for (int i = 0; i < 10; ++i)
+	{
+		randomize_matrix(mL2, -1.0l, 1.0l);
+
+		mS2 = mL2;
+
+		mL3 = mL1 * mL2;
+		mS3 = mS1 * mS2;
+
+		mL3 = decltype(mL3)(mS3) - mL3;
+
+		diff += mL3.var();
+	}
+
+	std::cout << "var: " << double(diff) << std::endl;
+
+	std::cout << sizeof(__float128) << " " << sizeof(long double) << " "
+	          << std::is_same<long double, __float128>::value << std::endl;
+	std::cout << sizeof(_Float64) << " " << sizeof(double) << " "
+	          << std::is_same<double, _Float64>::value << std::endl;
+	std::cout << sizeof(_Float32) << " " << sizeof(float) << " "
+	          << std::is_same<float, _Float32>::value << std::endl;
 
 	return 0;
 }

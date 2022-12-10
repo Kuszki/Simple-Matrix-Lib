@@ -102,7 +102,13 @@ data& matrix<data>::get_val(size_t row, size_t col)
 }
 
 template<typename data>
-data matrix<data>::get_val(size_t row, size_t col, data def) const
+const data& matrix<data>::get_val(size_t row, size_t col) const
+{
+	return m_ptr[m_cols*row + col];
+}
+
+template<typename data>
+const data& matrix<data>::get_val(size_t row, size_t col, const data& def) const
 {
 	if (row >= m_rows || col >= m_cols) return def;
 	else return m_ptr[m_cols*row + col];
@@ -270,6 +276,7 @@ data matrix<data>::det(void) const
 template<typename data>
 bool matrix<data>::resize(size_t rows, size_t cols)
 {
+	if (rows == m_rows && cols == m_cols) return false;
 	if (rows > 0 && cols > 0) clear();
 	else return false;
 
@@ -502,13 +509,13 @@ matrix<data> matrix<data>::get_col(size_t n) const
 }
 
 template<typename data>
-data& matrix<data>::operator()(size_t row, size_t col)
+data& matrix<data>::operator() (size_t row, size_t col)
 {
 	return get_val(row, col);
 }
 
 template<typename data>
-data matrix<data>::operator()(size_t row, size_t col) const
+const data& matrix<data>::operator() (size_t row, size_t col) const
 {
 	return get_val(row, col);
 }
@@ -585,6 +592,7 @@ template<typename data>
 matrix<data>& matrix<data>::operator= (matrix<data>&& other)
 {
 	if (&other == this) return *this;
+	else clear();
 
 	m_cols = other.m_cols;
 	m_rows = other.m_rows;
@@ -596,7 +604,7 @@ matrix<data>& matrix<data>::operator= (matrix<data>&& other)
 }
 
 template<typename data> template<typename type>
-matrix<data> matrix<data>::operator+ (const matrix<type>& other) const
+matrix<data> matrix<data>::operator+ (const matrix<type>& other) const&
 {
 	if (m_rows != other.m_rows ||
 	    m_cols != other.m_cols) return matrix<data>();
@@ -607,13 +615,43 @@ matrix<data> matrix<data>::operator+ (const matrix<type>& other) const
 
      #pragma omp parallel for
 	for (size_t i = 0; i < count; ++i)
-		out.m_ptr[i] += m_ptr[i] + other.m_ptr[i];
+		out.m_ptr[i] = m_ptr[i] + other.m_ptr[i];
 
 	return out;
 }
 
 template<typename data> template<typename type>
-matrix<data> matrix<data>::operator- (const matrix<type>& other) const
+matrix<data> matrix<data>::operator+ (matrix<type>&& other) const
+{
+	if (m_rows != other.m_rows ||
+	    m_cols != other.m_cols) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		other.m_ptr[i] += m_ptr[i];
+
+	return std::move(other);
+}
+
+template<typename data> template<typename type>
+matrix<data> matrix<data>::operator+ (const matrix<type>& other) &&
+{
+	if (m_rows != other.m_rows ||
+	    m_cols != other.m_cols) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		m_ptr[i] += other.m_ptr[i];
+
+	return std::move(*this);
+}
+
+template<typename data> template<typename type>
+matrix<data> matrix<data>::operator- (const matrix<type>& other) const&
 {
 	if (m_rows != other.m_rows ||
 	    m_cols != other.m_cols) return matrix<data>();
@@ -624,9 +662,39 @@ matrix<data> matrix<data>::operator- (const matrix<type>& other) const
 
      #pragma omp parallel for
 	for (size_t i = 0; i < count; ++i)
-		out.m_ptr[i] += m_ptr[i] - other.m_ptr[i];
+		out.m_ptr[i] = m_ptr[i] - other.m_ptr[i];
 
 	return out;
+}
+
+template<typename data> template<typename type>
+matrix<data> matrix<data>::operator- (matrix<type>&& other) const
+{
+	if (m_rows != other.m_rows ||
+	    m_cols != other.m_cols) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		other.m_ptr[i] -= m_ptr[i];
+
+	return std::move(other);
+}
+
+template<typename data> template<typename type>
+matrix<data> matrix<data>::operator- (const matrix<type>& other) &&
+{
+	if (m_rows != other.m_rows ||
+	    m_cols != other.m_cols) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		m_ptr[i] -= other.m_ptr[i];
+
+	return std::move(*this);
 }
 
 template<typename data> template<typename type>
@@ -645,8 +713,8 @@ matrix<data> matrix<data>::operator* (const matrix<type>& other) const
 	return res;
 }
 
-template<typename data> template<typename type>
-matrix<data> matrix<data>::operator+ (const type& other) const
+template<typename data>
+matrix<data> matrix<data>::operator+ (const data& other) const&
 {
 	matrix<data> res(m_rows, m_cols);
 
@@ -659,8 +727,20 @@ matrix<data> matrix<data>::operator+ (const type& other) const
 	return res;
 }
 
-template<typename data> template<typename type>
-matrix<data> matrix<data>::operator- (const type& other) const
+template<typename data>
+matrix<data> matrix<data>::operator+ (const data& other) &&
+{
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		m_ptr[i] += other;
+
+	return std::move(*this);
+}
+
+template<typename data>
+matrix<data> matrix<data>::operator- (const data& other) const&
 {
 	matrix<data> res(m_rows, m_cols);
 
@@ -673,8 +753,20 @@ matrix<data> matrix<data>::operator- (const type& other) const
 	return res;
 }
 
-template<typename data> template<typename type>
-matrix<data> matrix<data>::operator* (const type& other) const
+template<typename data>
+matrix<data> matrix<data>::operator- (const data& other) &&
+{
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		m_ptr[i] -= other;
+
+	return std::move(*this);
+}
+
+template<typename data>
+matrix<data> matrix<data>::operator* (const data& other) const&
 {
 	matrix<data> res(m_rows, m_cols);
 
@@ -687,8 +779,20 @@ matrix<data> matrix<data>::operator* (const type& other) const
 	return res;
 }
 
-template<typename data> template<typename type>
-matrix<data> matrix<data>::operator/ (const type& other) const
+template<typename data>
+matrix<data> matrix<data>::operator* (const data& other) &&
+{
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		m_ptr[i] *= other;
+
+	return std::move(*this);
+}
+
+template<typename data>
+matrix<data> matrix<data>::operator/ (const data& other) const&
 {
 	matrix<data> res(m_rows, m_cols);
 
@@ -699,6 +803,18 @@ matrix<data> matrix<data>::operator/ (const type& other) const
 		res.m_ptr[i] = m_ptr[i] / other;
 
 	return res;
+}
+
+template<typename data>
+matrix<data> matrix<data>::operator/ (const data& other) &&
+{
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for
+	for (size_t i = 0; i < count; ++i)
+		m_ptr[i] /= other;
+
+	return std::move(*this);
 }
 
 template<typename data> template<typename type>

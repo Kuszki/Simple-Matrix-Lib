@@ -66,7 +66,8 @@ class matrix
 		matrix(const matrix<type>& other);
 
 		data& get_val(size_t row, size_t col);
-		data get_val(size_t row, size_t col, data def = data()) const;
+		const data& get_val(size_t row, size_t col) const;
+		const data& get_val(size_t row, size_t col, const data& def) const;
 		bool set_val(size_t row, size_t col, const data& val);
 
 		matrix<data> get_row(size_t n) const;
@@ -109,28 +110,28 @@ class matrix
 		bool set_col(size_t n, const matrix<type>& other);
 
 		template<typename type>
-		matrix<data> operator+ (const matrix<type>& other) const;
+		matrix<data> operator+ (const matrix<type>& other) const&;
 
 		template<typename type>
-		matrix<data> operator- (const matrix<type>& other) const;
+		matrix<data> operator- (const matrix<type>& other) const&;
+
+		template<typename type>
+		matrix<data> operator+ (matrix<type>&& other) const;
+
+		template<typename type>
+		matrix<data> operator- (matrix<type>&& other) const;
+
+		template<typename type>
+		matrix<data> operator+ (const matrix<type>& other) &&;
+
+		template<typename type>
+		matrix<data> operator- (const matrix<type>& other) &&;
 
 		template<typename type>
 		matrix<data> operator* (const matrix<type>& other) const;
 
 		template<typename type>
 		matrix<data> operator/ (const matrix<type>& other) const;
-
-		template<typename type>
-		matrix<data> operator+ (const type& other) const;
-
-		template<typename type>
-		matrix<data> operator- (const type& other) const;
-
-		template<typename type>
-		matrix<data> operator* (const type& other) const;
-
-		template<typename type>
-		matrix<data> operator/ (const type& other) const;
 
 		template<typename type>
 		matrix<data>& operator+= (const matrix<type>& other);
@@ -168,8 +169,18 @@ class matrix
 		matrix<data>& operator= (const matrix<data>& other);
 		matrix<data>& operator= (matrix<data>&& other);
 
+		matrix<data> operator+ (const data& other) const&;
+		matrix<data> operator- (const data& other) const&;
+		matrix<data> operator* (const data& other) const&;
+		matrix<data> operator/ (const data& other) const&;
+
+		matrix<data> operator+ (const data& other) &&;
+		matrix<data> operator- (const data& other) &&;
+		matrix<data> operator* (const data& other) &&;
+		matrix<data> operator/ (const data& other) &&;
+
 		data& operator() (size_t row, size_t col);
-		data operator() (size_t row, size_t col) const;
+		const data& operator() (size_t row, size_t col) const;
 
 		matrix<data> operator- (void) const;
 

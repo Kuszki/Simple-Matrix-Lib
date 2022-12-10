@@ -18,40 +18,59 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#define debugmsg std::cout << "Test " << __FILE__ << " failed at line " << __LINE__ << std::endl
-#define endtest(num, ok) { debugmsg; ++num; } else { ++num; ++ok; }
+#ifndef HELPER_CPP
+#define HELPER_CPP
 
-#include <iostream>
+#ifndef HELPER_HPP
+#include "helper.hpp"
+#endif
 
-#include "matrix.hpp"
-
-int main(int argc, char* args[])
+template<typename data>
+void print_matrix(const matrix<data>& m)
 {
-	int n = 0, ok = 0;
-
-	const matrix<int> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
-	const matrix<int> b(2, 3, { 1, 2, 3, 4, 5, 6 });
-	const matrix<int> g(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
-
-	const matrix<int> r1(4, 3, { 9, 12, 15, 19, 26, 33, 29, 40, 51, 39, 54, 69 });
-	const matrix<int> r2(4, 2, { 2, 4, 6, 8, 10, 12, 14, 16 });
-	const matrix<int> r3(4, 3, { 162, 198, 234, 354, 432, 510, 546, 666, 786, 738, 900, 1062 });
-
-	const auto h = a * b * g;
-	const auto c = a * b;
-	auto d = a; d *= b;
-
-	if (r1 != c || r1 != d) endtest(n, ok);
-	if (r1 != a * b) endtest(n, ok);
-	if (r3 != h) endtest(n, ok);
-
-	const auto e = a * 2;
-	auto f = a; f *= 2;
-
-	if (r2 != e || r2 != f) endtest(n, ok);
-
-	if (a * -1 != -a) endtest(n, ok);
-	if (b * -1 != -b) endtest(n, ok);
-
-	return !(n == ok);
+	for (int i = 0; i < m.rows(); ++i)
+	{
+		for (int j = 0; j < m.cols(); ++j)
+		{
+			std::cout << m(i, j) << "\t";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
 }
+
+template<typename data>
+requires std::is_floating_point_v<data>
+void randomize_matrix(matrix<data>& m, data min, data max)
+{
+	std::uniform_real_distribution<data> dis(min, max);
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	for (int i = 0; i < m.rows(); ++i)
+	{
+		for (int j = 0; j < m.cols(); ++j)
+		{
+			m(i, j) = dis(gen);
+		}
+	}
+}
+
+template<typename data>
+requires std::is_integral_v<data>
+void randomize_matrix(matrix<data>& m, data min, data max)
+{
+	std::uniform_int_distribution<data> dis(min, max);
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	for (int i = 0; i < m.rows(); ++i)
+	{
+		for (int j = 0; j < m.cols(); ++j)
+		{
+			m(i, j) = dis(gen);
+		}
+	}
+}
+
+#endif
