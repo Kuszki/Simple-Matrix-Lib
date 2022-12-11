@@ -32,6 +32,8 @@ template<typename data>
 class matrix
 {
 
+	public: using data_type = data;
+
 	public: enum class mode
 		{
 			all,
