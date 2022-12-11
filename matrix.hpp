@@ -46,6 +46,8 @@ class matrix
 		size_t m_cols = 0;
 		size_t m_rows = 0;
 
+		size_t m_ompmin = 1024;
+
 	public:
 
 		explicit matrix(const std::string& file);
@@ -78,6 +80,9 @@ class matrix
 		size_t cols(void) const;
 		size_t size(void) const;
 
+		size_t get_ompmin(void) const;
+		bool set_ompmin(size_t ompmin);
+
 		bool resize(size_t rows, size_t cols);
 		bool clear(void);
 
@@ -96,7 +101,7 @@ class matrix
 
 		matrix<data> submatrix(size_t row, size_t col) const;
 		matrix<data> transpose(void) const;
-		matrix<data> diagonal(void) const;
+		matrix<data> diagonal(mode mod = mode::rows) const;
 
 		data mean(size_t n = 0, mode mod = mode::all) const;
 		data var(size_t n = 0, mode mod = mode::all) const;

@@ -47,7 +47,7 @@ double test(const size_t size, const size_t iters)
 	randomize_matrix(b, -1.0, 1.0);
 
 	auto start = std::chrono::system_clock::now();
-	for (size_t i = 0; i < iters; ++i) a * b;
+	for (size_t i = 0; i < iters; ++i) c = a * b;
 	auto stop = std::chrono::system_clock::now();
 
 	return std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count()/1000.0;
@@ -83,10 +83,10 @@ int main(int argc, char* args[])
 //		diff += mL3.var();
 //	}
 
-	for (size_t i = 16; i <= 2048; i += 16)
+	for (size_t i = 16; i <= 512; i += 8)
 	{
 //		std::cout << i << " : " << (test(i, 2048/i) / (2048/i)) << std::endl;
-		std::cout << i << " : " << (test(i, 1) / 1.0) << std::endl;
+		std::cout << i << " : " << (test(i, 500) / 1.0) << std::endl;
 	}
 
 	//free(tst);

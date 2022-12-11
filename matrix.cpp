@@ -61,7 +61,7 @@ matrix<data>::matrix(size_t rows, size_t cols, const data ptr[])
 {
 	resize(rows, cols); const size_t count = rows*cols;
 
-     #pragma omp parallel for
+     #pragma omp parallel for if(count > m_ompmin)
 	for (size_t i = 0; i < count; ++i) m_ptr[i] = ptr[i];
 }
 
@@ -70,7 +70,7 @@ matrix<data>::matrix(size_t rows, size_t cols, const data& val)
 {
 	resize(rows, cols); const size_t count = rows*cols;
 
-     #pragma omp parallel for
+     #pragma omp parallel for if(count > m_ompmin)
 	for (size_t i = 0; i < count; ++i) m_ptr[i] = val;
 }
 
@@ -393,12 +393,12 @@ bool matrix<data>::load(std::istream& stream)
 	if (cnum) count -= count % cnum;
 	else cnum = count;
 
-	if (count) ptr = static_cast<data*>(std::realloc(ptr, count * sizeof(data)));
-	else if (ptr) { std::free(ptr); ptr = nullptr; }
+	if (count) mem = std::realloc(ptr, count * sizeof(data));
+	else if (ptr) { std::free(ptr); mem = ptr = nullptr; }
 
-	if (ptr) clear(); else return false;
+	if (mem != nullptr) clear(); else return false;
 
-	m_ptr = ptr;
+	m_ptr = static_cast<data*>(mem);
 	m_rows = count / cnum;
 	m_cols = cnum;
 
@@ -412,7 +412,7 @@ bool matrix<data>::save(std::ostream& stream) const
 
 	for (size_t i = 0; i < m_rows; ++i)
 		for (size_t j = 0; j < m_cols; ++j)
-			stream << get_val(i, j) << (j+1 == m_cols ? '\n' : ' ');
+			stream << get_val(i, j) << (j+1 == m_cols ? '\n' : '\t');
 
 	return !stream.fail();
 }
@@ -436,14 +436,27 @@ size_t matrix<data>::size(void) const
 }
 
 template<typename data>
+size_t matrix<data>::get_ompmin(void) const
+{
+	return m_ompmin;
+}
+
+template<typename data>
+bool matrix<data>::set_ompmin(size_t ompmin)
+{
+	return m_ompmin = ompmin;
+}
+
+template<typename data>
 matrix<data> matrix<data>::submatrix(size_t row, size_t col) const
 {
 	if (m_cols < 2 || m_rows < 2) return matrix<data>();
 	else if (row >= m_rows || col >= m_cols) return *this;
 
+	const size_t count = m_rows * m_cols;
 	matrix<data> res(m_rows - 1, m_cols - 1);
 
-     #pragma omp parallel for collapse(2)
+     #pragma omp parallel for collapse(2) if(count > m_ompmin)
 	for (size_t i = 0; i < m_rows; ++i)
 		for (size_t j = 0; j < m_cols; ++j)
 		{
@@ -461,9 +474,10 @@ matrix<data> matrix<data>::submatrix(size_t row, size_t col) const
 template<typename data>
 matrix<data> matrix<data>::transpose(void) const
 {
-	matrix tmp(m_cols, m_rows);
+	const size_t count = m_rows * m_cols;
+	matrix<data> tmp(m_cols, m_rows);
 
-     #pragma omp parallel for collapse(2)
+     #pragma omp parallel for collapse(2) if(count > m_ompmin)
 	for (size_t i = 0; i < m_rows; ++i)
 		for (size_t j = 0; j < m_cols; ++j)
 			tmp.set_val(j, i, get_val(i, j));
@@ -472,15 +486,16 @@ matrix<data> matrix<data>::transpose(void) const
 }
 
 template<typename data>
-matrix<data> matrix<data>::diagonal(void) const
+matrix<data> matrix<data>::diagonal(matrix<data>::mode mod) const
 {
 	if (m_rows != m_cols) return matrix<data>();
 
-	matrix tmp(1, m_cols);
+	matrix<data> tmp = mod == mode::rows ?
+	                        matrix<data>(1, m_cols) :
+	                        matrix<data>(m_rows, 1);
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < m_cols; ++i)
-		tmp.set_val(0, i, get_val(i, i));
+     #pragma omp parallel for if(m_cols >= m_ompmin)
+	for (size_t i = 0; i < m_cols; ++i) tmp.m_ptr[i] = get_val(i, i);
 
 	return tmp;
 }
@@ -490,11 +505,10 @@ matrix<data> matrix<data>::get_row(size_t n) const
 {
 	if (n >= m_rows) return matrix<data>();
 
-	matrix res(1, m_cols);
+	matrix<data> res(1, m_cols);
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < m_cols; ++i)
-		res.m_ptr[i] = get_val(n, i);
+     #pragma omp parallel for if(m_cols >= m_ompmin)
+	for (size_t i = 0; i < m_cols; ++i) res.m_ptr[i] = get_val(n, i);
 
 	return res;
 }
@@ -504,11 +518,10 @@ matrix<data> matrix<data>::get_col(size_t n) const
 {
 	if (n >= m_cols) return matrix<data>();
 
-	matrix res(m_rows, 1);
+	matrix<data> res(m_rows, 1);
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < m_rows; ++i)
-		res.m_ptr[i] = get_val(i, n);
+     #pragma omp parallel for if(m_rows >= m_ompmin)
+	for (size_t i = 0; i < m_rows; ++i) res.m_ptr[i] = get_val(i, n);
 
 	return res;
 }
@@ -529,9 +542,9 @@ template<typename data>
 matrix<data> matrix<data>::operator- (void) const
 {
 	const size_t count = m_rows * m_cols;
-	matrix res(m_rows, m_cols);
+	matrix<data> res(m_rows, m_cols);
 
-     #pragma omp parallel for
+     #pragma omp parallel for if(count > m_ompmin)
 	for (size_t i = 0; i < count; ++i) res.m_ptr[i] = -m_ptr[i];
 
 	return res;
@@ -544,7 +557,7 @@ bool matrix<data>::set_row(size_t n, const matrix<type>& other)
 	if (other.m_rows != 1 && other.m_cols != 1) return false;
 	if (other.m_rows != m_cols && other.m_cols != m_cols) return false;
 
-     #pragma omp parallel for
+     #pragma omp parallel for if(m_cols >= m_ompmin)
 	for (size_t i = 0; i < m_cols; ++i) set_val(n, i, other.m_ptr[i]);
 
 	return true;
@@ -557,7 +570,7 @@ bool matrix<data>::set_col(size_t n, const matrix<type>& other)
 	if (other.m_rows != 1 && other.m_cols != 1) return false;
 	if (other.m_rows != m_rows && other.m_cols != m_rows) return false;
 
-     #pragma omp parallel for
+     #pragma omp parallel for if(m_rows >= m_ompmin)
 	for (size_t i = 0; i < m_rows; ++i) set_val(i, n, other.m_ptr[i]);
 
 	return true;
@@ -571,9 +584,8 @@ matrix<data>& matrix<data>::operator= (const matrix<type>& other)
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] = other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] = other.m_ptr[i];
 
 	return *this;
 }
@@ -586,9 +598,8 @@ matrix<data>& matrix<data>::operator= (const matrix<data>& other)
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] = other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] = other.m_ptr[i];
 
 	return *this;
 }
@@ -615,12 +626,10 @@ matrix<data> matrix<data>::operator+ (const matrix<type>& other) const&
 	    m_cols != other.m_cols) return matrix<data>();
 
 	matrix<data> out(m_rows, m_cols);
-
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		out.m_ptr[i] = m_ptr[i] + other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) out.m_ptr[i] = m_ptr[i] + other.m_ptr[i];
 
 	return out;
 }
@@ -633,9 +642,8 @@ matrix<data> matrix<data>::operator+ (matrix<type>&& other) const
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		other.m_ptr[i] += m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) other.m_ptr[i] += m_ptr[i];
 
 	return std::move(other);
 }
@@ -648,9 +656,8 @@ matrix<data> matrix<data>::operator+ (const matrix<type>& other) &&
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] += other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] += other.m_ptr[i];
 
 	return std::move(*this);
 }
@@ -662,12 +669,10 @@ matrix<data> matrix<data>::operator- (const matrix<type>& other) const&
 	    m_cols != other.m_cols) return matrix<data>();
 
 	matrix<data> out(m_rows, m_cols);
-
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		out.m_ptr[i] = m_ptr[i] - other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) out.m_ptr[i] = m_ptr[i] - other.m_ptr[i];
 
 	return out;
 }
@@ -680,9 +685,8 @@ matrix<data> matrix<data>::operator- (matrix<type>&& other) const
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		other.m_ptr[i] -= m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) other.m_ptr[i] -= m_ptr[i];
 
 	return std::move(other);
 }
@@ -695,9 +699,8 @@ matrix<data> matrix<data>::operator- (const matrix<type>& other) &&
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] -= other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] -= other.m_ptr[i];
 
 	return std::move(*this);
 }
@@ -710,27 +713,16 @@ matrix<data> matrix<data>::operator* (const matrix<type>& other) const
 	matrix<data> res(m_rows, other.m_cols, data(0));
 	const size_t count = res.m_rows * res.m_cols;
 
-//     #pragma omp parallel for collapse(2) default(shared) //if(count > 256)
-	for (size_t i = 0; i < res.m_cols; ++i)
-		for (size_t j = 0; j < res.m_rows; ++j)
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < res.m_rows; ++i)
+		for (size_t k = 0; k < m_cols; ++k)
 		{
-			data& ref = res.m_ptr[j * res.m_cols + i];
-
-			size_t mr = j * m_cols;
-			size_t oi = i;
-
-			for (size_t k = 0; k < m_cols; ++k, ++mr)
+			const data& mul = m_ptr[i * m_cols + k];
+			for (size_t j = 0; j < res.m_cols; ++j)
 			{
-				ref += m_ptr[mr] * other.m_ptr[oi];
-				oi += other.m_cols;
+				res(i, j) += mul * other(k, j);
 			}
 		}
-
-//#pragma omp parallel for collapse(2)
-//	for (size_t i = 0; i < res.m_cols; ++i)
-//		for (size_t j = 0; j < res.m_rows; ++j)
-//			for (size_t k = 0; k < m_cols; ++k)
-//				res.get_val(j, i) += get_val(j, k) * other.get_val(k, i);
 
 	return res;
 }
@@ -742,9 +734,8 @@ matrix<data> matrix<data>::operator+ (const data& other) const&
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		res.m_ptr[i] = m_ptr[i] + other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) res.m_ptr[i] = m_ptr[i] + other;
 
 	return res;
 }
@@ -754,9 +745,8 @@ matrix<data> matrix<data>::operator+ (const data& other) &&
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] += other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] += other;
 
 	return std::move(*this);
 }
@@ -768,9 +758,8 @@ matrix<data> matrix<data>::operator- (const data& other) const&
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		res.m_ptr[i] = m_ptr[i] - other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) res.m_ptr[i] = m_ptr[i] - other;
 
 	return res;
 }
@@ -780,9 +769,8 @@ matrix<data> matrix<data>::operator- (const data& other) &&
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] -= other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] -= other;
 
 	return std::move(*this);
 }
@@ -794,9 +782,8 @@ matrix<data> matrix<data>::operator* (const data& other) const&
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		res.m_ptr[i] = m_ptr[i] * other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) res.m_ptr[i] = m_ptr[i] * other;
 
 	return res;
 }
@@ -806,9 +793,8 @@ matrix<data> matrix<data>::operator* (const data& other) &&
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] *= other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] *= other;
 
 	return std::move(*this);
 }
@@ -820,9 +806,8 @@ matrix<data> matrix<data>::operator/ (const data& other) const&
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		res.m_ptr[i] = m_ptr[i] / other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) res.m_ptr[i] = m_ptr[i] / other;
 
 	return res;
 }
@@ -832,9 +817,8 @@ matrix<data> matrix<data>::operator/ (const data& other) &&
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] /= other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] /= other;
 
 	return std::move(*this);
 }
@@ -847,9 +831,8 @@ matrix<data>& matrix<data>::operator+= (const matrix<type>& other)
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] += other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] += other.m_ptr[i];
 
 	return *this;
 }
@@ -862,9 +845,8 @@ matrix<data>& matrix<data>::operator-= (const matrix<type>& other)
 
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] -= other.m_ptr[i];
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] -= other.m_ptr[i];
 
 	return *this;
 }
@@ -881,9 +863,8 @@ matrix<data>& matrix<data>::operator+= (const type& other)
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] += other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] += other;
 
 	return *this;
 }
@@ -893,9 +874,8 @@ matrix<data>& matrix<data>::operator-= (const type& other)
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] -= other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] -= other;
 
 	return *this;
 }
@@ -905,9 +885,8 @@ matrix<data>& matrix<data>::operator*= (const type& other)
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] *= other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] *= other;
 
 	return *this;
 }
@@ -917,9 +896,8 @@ matrix<data>& matrix<data>::operator/= (const type& other)
 {
 	const size_t count = m_rows * m_cols;
 
-     #pragma omp parallel for
-	for (size_t i = 0; i < count; ++i)
-		m_ptr[i] /= other;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] /= other;
 
 	return *this;
 }
@@ -931,7 +909,8 @@ bool matrix<data>::operator== (const matrix<type>& other) const
 
 	const size_t count = m_rows * m_cols;
 	for (size_t i = 0; i < count; ++i)
-		if (m_ptr[i] != other.m_ptr[i]) return false;
+		if (m_ptr[i] != other.m_ptr[i])
+			return false;
 
 	return true;
 }
@@ -943,7 +922,8 @@ bool matrix<data>::operator!= (const matrix<type>& other) const
 
 	const size_t count = m_rows * m_cols;
 	for (size_t i = 0; i < count; ++i)
-		if (m_ptr[i] != other.m_ptr[i]) return true;
+		if (m_ptr[i] != other.m_ptr[i])
+			return true;
 
 	return false;
 }
