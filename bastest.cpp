@@ -33,10 +33,10 @@ int main(int argc, char* args[])
 	const matrix<int> b(2, 4, { 1, 2, 3, 4, 5, 6, 7, 8 });
 	const matrix<int> c(2, 4, { 0, 0, 0, 0, 0, 0, 0, 0 });
 	const matrix<int> d(1, 5, { 1, 2, 3, 4, 5 });
-	const matrix<int> e = {1, 2, 3, 4, 5};
+	const matrix<int> e = { 1, 2, 3, 4, 5 };
 	const matrix<int> f = {{ 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 }};
 
-	if (c != matrix<int>(2, 4)) endtest(n, ok);
+	if (c != matrix<int>(2, 4, 0)) endtest(n, ok);
 	if (d != e) endtest(n, ok);
 	if (f != a) endtest(n, ok);
 
