@@ -25,20 +25,6 @@
 
 // -mlong-double-128 -lquadmath -m128bit-long-double
 
-//template<>
-//void print_matrix(const matrix<long double>& m)
-//{
-//	for (int i = 0; i < m.rows(); ++i)
-//	{
-//		for (int j = 0; j < m.cols(); ++j)
-//		{
-//			std::cout << static_cast<double>(m(i, j)) << "\t";
-//		}
-//		std::cout << std::endl;
-//	}
-//	std::cout << std::endl;
-//}
-
 template<typename data>
 double test_speed(const size_t size, const size_t iters)
 {
@@ -104,7 +90,7 @@ int main(int argc, char* args[])
 
 	for (size_t i = 16; i <= 2048; i *= 2)
 	{
-		std::cout << i << "\t" << test_speed<float>(i, 500) << std::endl;
+		std::cout << i << "\t" << test_speed<__float128>(i, 500) << std::endl;
 	}
 
 	return 0;

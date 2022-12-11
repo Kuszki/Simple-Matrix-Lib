@@ -579,7 +579,7 @@ bool matrix<data>::set_col(size_t n, const matrix<type>& other)
 template<typename data> template<typename type>
 matrix<data>& matrix<data>::operator= (const matrix<type>& other)
 {
-	if (static_cast<const void*>(this) == &other) return *this;
+	if (static_cast<void*>(&other) == this) return *this;
 	else resize(other.m_rows, other.m_cols);
 
 	const size_t count = m_rows * m_cols;

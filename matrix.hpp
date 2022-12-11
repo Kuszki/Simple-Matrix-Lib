@@ -102,8 +102,8 @@ class matrix
 		bool save(std::ostream& stream) const;
 
 		matrix<data> submatrix(size_t row, size_t col) const;
-		matrix<data> transpose(void) const;
 		matrix<data> diagonal(mode mod = mode::rows) const;
+		matrix<data> transpose(void) const;
 
 		data mean(size_t n = 0, mode mod = mode::all) const;
 		data var(size_t n = 0, mode mod = mode::all) const;

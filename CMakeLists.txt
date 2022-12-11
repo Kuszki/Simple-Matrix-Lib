@@ -12,7 +12,7 @@ link_directories(${OpenMP_LIBRARY_DIR})
 
 add_library(${PROJECT_NAME} matrix.cpp matrix.hpp)
 
-add_executable(test_main main.cpp helper.cpp)
+add_executable(test_main main.cpp)
 add_executable(test_bas bastest.cpp)
 add_executable(test_add addtest.cpp)
 add_executable(test_sub subtest.cpp)
