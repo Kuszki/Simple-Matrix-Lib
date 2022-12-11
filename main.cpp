@@ -46,8 +46,8 @@ double test_speed(const size_t size, const size_t iters)
 
 	matrix<data> a(size, size), b(size, size), c;
 
-	randomize_matrix(a, -1.0, 1.0);
-	randomize_matrix(b, -1.0, 1.0);
+	randomize_matrix(a, data(-1.0), data(1.0));
+	randomize_matrix(b, data(-1.0), data(1.0));
 
 	auto start = system_clock::now();
 	for (size_t i = 0; i < iters; ++i) c = a * b;
@@ -104,7 +104,7 @@ int main(int argc, char* args[])
 
 	for (size_t i = 16; i <= 2048; i *= 2)
 	{
-		std::cout << i << "\t" << test_speed<double>(i, 500) << std::endl;
+		std::cout << i << "\t" << test_speed<float>(i, 500) << std::endl;
 	}
 
 	return 0;
