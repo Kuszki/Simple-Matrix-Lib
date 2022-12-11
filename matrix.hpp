@@ -53,8 +53,9 @@ class matrix
 		matrix(const std::initializer_list<data>& list);
 		matrix(const std::initializer_list<std::initializer_list<data>>& list);
 
+		matrix(size_t rows, size_t cols);
 		matrix(size_t rows, size_t cols, const data ptr[]);
-		matrix(size_t rows, size_t cols, const data& val = data());
+		matrix(size_t rows, size_t cols, const data& val);
 		matrix(size_t rows, size_t cols, const std::initializer_list<data>& list);
 
 		matrix(void) = default;

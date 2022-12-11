@@ -51,6 +51,12 @@ matrix<data>::matrix(const std::initializer_list<std::initializer_list<data>>& l
 }
 
 template<typename data>
+matrix<data>::matrix(size_t rows, size_t cols)
+{
+	resize(rows, cols);
+}
+
+template<typename data>
 matrix<data>::matrix(size_t rows, size_t cols, const data ptr[])
 {
 	resize(rows, cols); const size_t count = rows*cols;
@@ -277,16 +283,20 @@ template<typename data>
 bool matrix<data>::resize(size_t rows, size_t cols)
 {
 	if (rows == m_rows && cols == m_cols) return false;
-	if (rows > 0 && cols > 0) clear();
+	else if (rows > 0 && cols > 0) clear();
 	else return false;
 
-	const size_t count = cols*rows;
+	const size_t count = cols * rows;
+	void* ptr = std::malloc(count * sizeof(data));
 
-	m_ptr = static_cast<data*>(std::malloc(count * sizeof(data)));
-	m_cols = cols;
-	m_rows = rows;
+	if (ptr)
+	{
+		m_ptr = static_cast<data*>(ptr);
+		m_cols = cols;
+		m_rows = rows;
+	}
 
-	return true;
+	return m_ptr != nullptr;
 }
 
 template<typename data>
@@ -356,7 +366,8 @@ bool matrix<data>::load(std::istream& stream)
 	size_t length = step = 1024;
 	double val = 0.0;
 
-	data* ptr = static_cast<data*>(std::malloc(length * sizeof(data)));
+	void* mem = std::malloc(length * sizeof(data));
+	data* ptr = static_cast<data*>(mem);
 
 	while (stream >> val)
 	{
@@ -364,18 +375,12 @@ bool matrix<data>::load(std::istream& stream)
 
 		if (count == length)
 		{
-			data* old = ptr;
-
 			length += step;
-			ptr = static_cast<data*>(std::realloc(ptr, length * sizeof(data)));
+			mem = std::realloc(ptr, length * sizeof(data));
 			step *= 2;
 
-			if (!ptr)
-			{
-				std::free(old);
-
-				return false;
-			}
+			if (!mem) { std::free(ptr); return false; }
+			else ptr = static_cast<data*>(mem);
 		}
 
 		if (cnum == 0)
@@ -591,8 +596,8 @@ matrix<data>& matrix<data>::operator= (const matrix<data>& other)
 template<typename data>
 matrix<data>& matrix<data>::operator= (matrix<data>&& other)
 {
-	if (&other == this) return *this;
-	else clear();
+	if (&other != this) clear();
+	else return *this;
 
 	m_cols = other.m_cols;
 	m_rows = other.m_rows;
@@ -702,13 +707,30 @@ matrix<data> matrix<data>::operator* (const matrix<type>& other) const
 {
 	if (m_cols != other.m_rows) return matrix<data>();
 
-	matrix<data> res(m_rows, other.m_cols);
+	matrix<data> res(m_rows, other.m_cols, data(0));
+	const size_t count = res.m_rows * res.m_cols;
 
-     #pragma omp parallel for collapse(2)
+//     #pragma omp parallel for collapse(2) default(shared) //if(count > 256)
 	for (size_t i = 0; i < res.m_cols; ++i)
 		for (size_t j = 0; j < res.m_rows; ++j)
-			for (size_t k = 0; k < m_cols; ++k)
-				res.get_val(j, i) += get_val(j, k) * other.get_val(k, i);
+		{
+			data& ref = res.m_ptr[j * res.m_cols + i];
+
+			size_t mr = j * m_cols;
+			size_t oi = i;
+
+			for (size_t k = 0; k < m_cols; ++k, ++mr)
+			{
+				ref += m_ptr[mr] * other.m_ptr[oi];
+				oi += other.m_cols;
+			}
+		}
+
+//#pragma omp parallel for collapse(2)
+//	for (size_t i = 0; i < res.m_cols; ++i)
+//		for (size_t j = 0; j < res.m_rows; ++j)
+//			for (size_t k = 0; k < m_cols; ++k)
+//				res.get_val(j, i) += get_val(j, k) * other.get_val(k, i);
 
 	return res;
 }
@@ -851,16 +873,7 @@ template<typename data> template<typename type>
 matrix<data>& matrix<data>::operator*= (const matrix<type>& other)
 {
 	if (m_cols != other.m_rows) return *this;
-
-	matrix<data> res(m_rows, other.m_cols);
-
-     #pragma omp parallel for collapse(2)
-	for (size_t i = 0; i < res.m_cols; ++i)
-		for (size_t j = 0; j < res.m_rows; ++j)
-			for (size_t k = 0; k < m_cols; ++k)
-				res.get_val(j, i) += get_val(j, k)*other.get_val(k, i);
-
-	return *this = res;
+	else return *this = *this * other;
 }
 
 template<typename data> template<typename type>
