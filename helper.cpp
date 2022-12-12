@@ -46,7 +46,7 @@ void print_matrix(const matrix<__float128>& m)
 	{
 		for (int j = 0; j < m.cols(); ++j)
 		{
-			std::cout << (long double) m(i, j) << "\t";
+			std::cout << (double) m(i, j) << "\t";
 		}
 		std::cout << std::endl;
 	}
@@ -98,7 +98,7 @@ void randomize_matrix(matrix<__float128>& m, __float128 min, __float128 max)
 	{
 		for (int j = 0; j < m.cols(); ++j)
 		{
-			m(i, j) = dis(gen);
+			m(i, j) = (__float128) dis(gen);
 		}
 	}
 }

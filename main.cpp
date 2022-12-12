@@ -39,43 +39,49 @@ double test_speed(const size_t size, const size_t iters)
 	for (size_t i = 0; i < iters; ++i) c = a * b;
 	auto stop = system_clock::now();
 
+	print_matrix(a);
+
 	return duration_cast<milliseconds>(stop - start).count() / 1000.0;
 }
 
 template<typename data>
-double test_diff(const size_t size, const size_t iters)
+double test_diff(const matrix<long double>& mat,
+                 const size_t iters = 1e5,
+                 long double min = -1.0l,
+                 long double max = 1.0l,
+                 const bool vector = true)
 {
-	matrix<data> mS1, mS2, mS3;
-	matrix<long double>
-	          mL1(size, size),
-	          mL2(size, size),
-	          mL3(size, size);
+	matrix<long double> imat(mat.rows(), vector ? 1 : mat.cols()), omat;
+	const matrix<data> s_mat = mat;
+	matrix<data>s_imat, s_omat;
 
-	randomize_matrix(mL1, -1.0l, 1.0l);
-
-	long double diff = 0.0; mS1 = mL1;
+	long double diff = 0.0;
 
 	for (int i = 0; i < iters; ++i)
 	{
-		randomize_matrix(mL2, -1.0l, 1.0l);
+		randomize_matrix(imat, min, min);
 
-		mS2 = mL2;
+		s_imat = matrix<data>(imat);
+		s_omat = s_mat * s_imat;
 
-		mL3 = mL1 * mL2;
-		mS3 = mS1 * mS2;
+		omat = mat * imat;
+		omat -= s_omat;
 
-		mL3 = data(mS3) - mL3;
-
-		diff += mL3.var();
+		diff += omat.var();
 	}
 
-	return diff / iters;
+	return diff;
 }
 
 void print_finfo(void)
 {
+     #if __GNUC__ && !__clang__
 	std::cout << sizeof(__float128) << " " << sizeof(long double) << " "
 	          << std::is_same<long double, __float128>::value << std::endl;
+
+	std::cout << sizeof(__float80) << " " << sizeof(long double) << " "
+	          << std::is_same<long double, __float80>::value << std::endl;
+     #endif
 
 	std::cout << sizeof(_Float64) << " " << sizeof(double) << " "
 	          << std::is_same<double, _Float64>::value << std::endl;
@@ -88,10 +94,14 @@ int main(int argc, char* args[])
 {
 	std::cout.precision(10);
 
-	for (size_t i = 16; i <= 2048; i *= 2)
-	{
-		std::cout << i << "\t" << test_speed<__float128>(i, 500) << std::endl;
-	}
+//	for (size_t i = 16; i <= 2048; i *= 2)
+//	{
+//		std::cout << i << "\t" << test_speed<long double>(i, 50) << std::endl;
+//	}
+
+	matrix<long double> mat("db2_2_32.txt");
+
+	std::cout << test_diff<double>(mat) << std::endl;
 
 	return 0;
 }
