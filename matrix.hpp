@@ -21,6 +21,7 @@
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
 
+#include <functional>
 #include <utility>
 #include <fstream>
 #include <string>
@@ -28,11 +29,17 @@
 #include <cstddef>
 #include <cmath>
 
-template<typename data>
+template<typename data = double>
 class matrix
 {
 
-	public: using data_type = data;
+	public:
+
+		using fun_type_a = std::function<data (data, size_t, size_t, size_t, size_t)>;
+		using fun_type_b = std::function<data (data, size_t, size_t)>;
+		using fun_type_c = std::function<data (data)>;
+
+		using data_type = data;
 
 	public: enum class mode
 		{
@@ -105,8 +112,20 @@ class matrix
 		matrix<data> diagonal(mode mod = mode::rows) const;
 		matrix<data> transpose(void) const;
 
+		matrix<data> normalize(const data& val) const&;
+		matrix<data> normalize(const data& val) &&;
+
 		matrix<data> normalize(void) const&;
 		matrix<data> normalize(void) &&;
+
+		matrix<data> apply(const fun_type_a& fun, bool omp = true) const&;
+		matrix<data> apply(const fun_type_a& fun, bool omp = true) &&;
+
+		matrix<data> apply(const fun_type_b& fun, bool omp = true) const&;
+		matrix<data> apply(const fun_type_b& fun, bool omp = true) &&;
+
+		matrix<data> apply(const fun_type_c& fun, bool omp = true) const&;
+		matrix<data> apply(const fun_type_c& fun, bool omp = true) &&;
 
 		data mean(size_t n = 0, mode mod = mode::all) const;
 		data var(size_t n = 0, mode mod = mode::all) const;
@@ -201,6 +220,15 @@ class matrix
 		template<typename type> friend class matrix;
 
 		virtual ~matrix(void);
+
+		static matrix<data> gen_zeros(size_t rows, size_t cols);
+		static matrix<data> gen_ones(size_t rows, size_t cols);
+		static matrix<data> gen_diag(size_t size, const data& val = data(1));
+		static matrix<data> gen_const(size_t rows, size_t cols,
+		                              const data& val);
+		static matrix<data> gen_linsp(size_t rows, size_t cols,
+		                              const data& start,
+		                              const data& stop);
 
 };
 

@@ -582,6 +582,34 @@ matrix<data> matrix<data>::transpose(void) const
 }
 
 template<typename data>
+matrix<data> matrix<data>::normalize(const data& val) const&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+	matrix<data> out(m_rows, m_cols);
+
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)
+		out.m_ptr[i] = m_ptr[i] / val;
+
+	return out;
+}
+
+template<typename data>
+matrix<data> matrix<data>::normalize(const data& val) &&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)  m_ptr[i] /= val;
+
+	return std::move(*this);
+}
+
+template<typename data>
 matrix<data> matrix<data>::normalize(void) const&
 {
 	if (m_ptr == nullptr) return matrix<data>();
@@ -613,6 +641,107 @@ matrix<data> matrix<data>::normalize(void) &&
 
      #pragma omp parallel for if(count > m_ompmin)
 	for (size_t i = 0; i < count; ++i)  m_ptr[i] /= max;
+
+	return std::move(*this);
+}
+
+template<typename data>
+matrix<data> matrix<data>::apply(const fun_type_a& fun, bool omp) const&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+	matrix<data> out(m_rows, m_cols);
+
+     #pragma omp parallel for collapse(2) if(omp && count > m_ompmin)
+	for (size_t i = 0; i < m_rows; ++i)
+		for (size_t j = 0; j < m_cols; ++j)
+		{
+			out.get_val(i, j) = fun(get_val(i, j), i, j, m_rows, m_cols);
+		}
+
+	return out;
+}
+
+template<typename data>
+matrix<data> matrix<data>::apply(const fun_type_a& fun, bool omp) &&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for collapse(2) if(omp && count > m_ompmin)
+	for (size_t i = 0; i < m_rows; ++i)
+		for (size_t j = 0; j < m_cols; ++j)
+		{
+			get_val(i, j) = fun(get_val(i, j), i, j, m_rows, m_cols);
+		}
+
+	return std::move(*this);
+}
+
+template<typename data>
+matrix<data> matrix<data>::apply(const fun_type_b& fun, bool omp) const&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+	matrix<data> out(m_rows, m_cols);
+
+     #pragma omp parallel for if(omp && count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)
+	{
+		out.m_ptr[i] = fun(m_ptr[i], i, count);
+	}
+
+	return out;
+}
+
+template<typename data>
+matrix<data> matrix<data>::apply(const fun_type_b& fun, bool omp) &&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for if(omp && count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)
+	{
+		m_ptr[i] = fun(m_ptr[i], i, count);
+	}
+
+	return std::move(*this);
+}
+
+template<typename data>
+matrix<data> matrix<data>::apply(const fun_type_c& fun, bool omp) const&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+	matrix<data> out(m_rows, m_cols);
+
+     #pragma omp parallel for if(omp && count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)
+	{
+		out.m_ptr[i] = fun(m_ptr[i]);
+	}
+
+	return out;
+}
+
+template<typename data>
+matrix<data> matrix<data>::apply(const fun_type_c& fun, bool omp) &&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+
+     #pragma omp parallel for if(omp && count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)
+	{
+		m_ptr[i] = fun(m_ptr[i]);
+	}
 
 	return std::move(*this);
 }
@@ -725,7 +854,7 @@ matrix<data>& matrix<data>::operator= (const matrix<type>& other)
 template<typename data>
 matrix<data>& matrix<data>::operator= (const matrix<data>& other)
 {
-	if (static_cast<const void*>(&other) == this) return *this;
+	if (&other == this) return *this;
 	else resize(other.m_rows, other.m_cols);
 
 	const size_t count = m_rows * m_cols;
@@ -747,6 +876,8 @@ matrix<data>& matrix<data>::operator= (matrix<data>&& other)
 	m_ptr = other.m_ptr;
 
 	other.m_ptr = nullptr;
+	other.m_cols = 0;
+	other.m_rows = 0;
 
 	return *this;
 }
@@ -1064,6 +1195,51 @@ template<typename data>
 matrix<data>::~matrix(void)
 {
 	if (m_ptr) std::free(m_ptr);
+}
+
+template<typename data>
+matrix<data> matrix<data>::gen_zeros(size_t rows, size_t cols)
+{
+	return matrix<data>(rows, cols, data(0));
+}
+
+template<typename data>
+matrix<data> matrix<data>::gen_ones(size_t rows, size_t cols)
+{
+	return matrix<data>(rows, cols, data(1));
+}
+
+template<typename data>
+matrix<data> matrix<data>::gen_diag(size_t size, const data& val)
+{
+	matrix<data> out(size, size, data(0));
+
+     #pragma omp parallel for if (size > out.m_ompmin)
+	for (size_t i = 0; i < size; ++i) out.set_val(i, i, data(1));
+
+	return out;
+}
+
+template<typename data>
+matrix<data> matrix<data>::gen_const(size_t rows, size_t cols, const data& val)
+{
+	return matrix<data>(rows, cols, val);
+}
+
+template<typename data>
+matrix<data> matrix<data>::gen_linsp(size_t rows, size_t cols, const data& start, const data& stop)
+{
+	const size_t count = rows * cols;
+	const data dt = (stop - start);
+	matrix<data> out(rows, cols);
+
+     #pragma omp parallel for if (count > out.m_ompmin)
+	for (size_t i = 0; i < count; ++i)
+	{
+		out.m_ptr[i] = start + (dt * i) / (count - 1);
+	}
+
+	return out;
 }
 
 #endif
