@@ -24,6 +24,7 @@
 #include <iostream>
 
 #include "matrix.hpp"
+#include "helper.hpp"
 
 int main(int argc, char* args[])
 {
@@ -40,6 +41,23 @@ int main(int argc, char* args[])
 	if (c.det() != 0) endtest(n, ok);
 	if (d.det() != -3) endtest(n, ok);
 	if (e.det() != 64) endtest(n, ok);
+
+	if (e.min() != 3) endtest(n, ok);
+	if (e.max() != 16) endtest(n, ok);
+
+	print_matrix(e);
+
+	if (e.min(0, decltype(e)::mode::rows) != 3) endtest(n, ok);
+	if (e.max(0, decltype(e)::mode::rows) != 9) endtest(n, ok);
+
+	if (e.min(1, decltype(e)::mode::rows) != 5) endtest(n, ok);
+	if (e.max(1, decltype(e)::mode::rows) != 8) endtest(n, ok);
+
+	if (e.min(2, decltype(e)::mode::cols) != 3) endtest(n, ok);
+	if (e.max(2, decltype(e)::mode::cols) != 15) endtest(n, ok);
+
+	if (e.min(3, decltype(e)::mode::cols) != 4) endtest(n, ok);
+	if (e.max(3, decltype(e)::mode::cols) != 16) endtest(n, ok);
 
 	return !(n == ok);
 }

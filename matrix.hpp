@@ -105,9 +105,15 @@ class matrix
 		matrix<data> diagonal(mode mod = mode::rows) const;
 		matrix<data> transpose(void) const;
 
+		matrix<data> normalize(void) const&;
+		matrix<data> normalize(void) &&;
+
 		data mean(size_t n = 0, mode mod = mode::all) const;
 		data var(size_t n = 0, mode mod = mode::all) const;
 		data std(size_t n = 0, mode mod = mode::all) const;
+
+		data max(size_t n = 0, mode mod = mode::all) const;
+		data min(size_t n = 0, mode mod = mode::all) const;
 
 		data det(void) const;
 

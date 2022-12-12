@@ -39,16 +39,14 @@ double test_speed(const size_t size, const size_t iters)
 	for (size_t i = 0; i < iters; ++i) c = a * b;
 	auto stop = system_clock::now();
 
-	print_matrix(a);
-
 	return duration_cast<milliseconds>(stop - start).count() / 1000.0;
 }
 
 template<typename data, typename base = long double>
-long double test_diff(const matrix<long double>& mat,
-                      const size_t iters = 1e5,
-                      const base min = -1.0l,
-                      const base max = 1.0l)
+matrix<base> test_diff(const matrix<long double>& mat,
+                       const size_t iters = 1e5,
+                       const base min = -1.0l,
+                       const base max = 1.0l)
 {
 	const size_t osize = mat.size();
 
@@ -59,8 +57,7 @@ long double test_diff(const matrix<long double>& mat,
 	const matrix<data> s_mat = mat;
 	matrix<data>s_imat, s_omat;
 
-     #pragma omp parallel for default(none) \
-	     shared(mat, vmat, s_mat, iters, osize, min, max) \
+     #pragma omp parallel for default(shared) \
 	     firstprivate(imat, omat, s_imat, s_omat)
 	for (size_t i = 0; i < iters; ++i)
 	{
@@ -80,7 +77,7 @@ long double test_diff(const matrix<long double>& mat,
 			}
 	}
 
-	return vmat.var() / iters;
+	return vmat;
 }
 
 void print_finfo(void)
@@ -102,19 +99,40 @@ void print_finfo(void)
 
 int main(int argc, char* args[])
 {
-	std::cout.precision(10);
+	std::cout.precision(2);
+
+	const size_t iters = 1e6;
 
 //	for (size_t i = 16; i <= 2048; i *= 2)
 //	{
 //		std::cout << i << "\t" << test_speed<long double>(i, 50) << std::endl;
 //	}
 
-	matrix<long double> mat("db2_2_16.txt");
+	const std::string path = "db2_2_16.txt";
+	const matrix<long double> mat(path);
 
-	for (size_t i = 0; i < mat.rows(); ++i)
-	{
-		std::cout << (i) << "\t" << test_diff<float>(mat.get_row(i)) << std::endl;
-	}
+	test_diff<_Float16>(mat.get_row(1), iters).normalize().save("test.txt", 5);
+
+//	std::cout << "out\tfloat16\tfloat32\tfloat64\n";
+
+//	for (size_t i = 0; i < mat.rows(); ++i)
+//	{
+//		const auto row = mat.get_row(i);
+
+//		std::cout << std::fixed << (i) << "\t" << std::scientific
+//		          << test_diff<_Float16>(row, iters).var() / iters << "\t"
+//		          << test_diff<_Float32>(row, iters).var() / iters << "\t"
+//		          << test_diff<_Float64>(row, iters).var() / iters << "\n";
+//	}
+
+//	matrix<long double> mat(1, 32);
+//	std::ofstream file("test.txt");
+
+//	for (size_t i = 0; i < 1000; ++i)
+//	{
+//		randomize_matrix(mat, -1.0l, 1.0l);
+//		mat.save(file);
+//	}
 
 	return 0;
 }

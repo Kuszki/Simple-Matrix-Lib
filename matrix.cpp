@@ -130,7 +130,7 @@ bool matrix<data>::set_val(size_t row, size_t col, const data& val)
 }
 
 template<typename data>
-data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
+data matrix<data>::mean(size_t n, mode mod) const
 {
 	data out = data();
 
@@ -186,7 +186,7 @@ data matrix<data>::mean(size_t n, matrix<data>::mode mod) const
 }
 
 template<typename data>
-data matrix<data>::var(size_t n, matrix<data>::mode mod) const
+data matrix<data>::var(size_t n, mode mod) const
 {
 	const data m = mean(n, mod);
 	data out = data();
@@ -252,9 +252,101 @@ data matrix<data>::var(size_t n, matrix<data>::mode mod) const
 }
 
 template<typename data>
-data matrix<data>::std(size_t n, matrix<data>::mode mod) const
+data matrix<data>::std(size_t n, mode mod) const
 {
 	return std::sqrt(var(n, mod));
+}
+
+template<typename data>
+data matrix<data>::max(size_t n, mode mod) const
+{
+	if (m_ptr == nullptr) return data();
+	else switch (mod)
+	{
+		case mode::all:
+		{
+			const size_t count = m_rows * m_cols;
+			data out = m_ptr[0];
+
+			for (size_t i = 1; i < count; ++i)
+				if (out < m_ptr[i]) out = m_ptr[i];
+
+			return out;
+		}
+		break;
+		case mode::rows:
+		{
+			if (n >= m_rows) return data();
+
+			size_t ci = n * m_cols + 1;
+			data out = get_val(n, 0);
+
+			for (size_t i = 1; i < m_cols; ++i, ++ci)
+				if (out < m_ptr[ci]) out = m_ptr[ci];
+
+			return out;
+		}
+		break;
+		case mode::cols:
+		{
+			if (n >= m_cols) return data();
+
+			size_t ci = n + m_cols;
+			data out = get_val(n, 0);
+
+			for (size_t i = 1; i < m_rows; ++i, ci += m_cols)
+				if (out < m_ptr[ci]) out = m_ptr[ci];
+
+			return out;
+		}
+		break;
+	}
+}
+
+template<typename data>
+data matrix<data>::min(size_t n, mode mod) const
+{
+	if (m_ptr == nullptr) return data();
+	else switch (mod)
+	{
+		case mode::all:
+		{
+			const size_t count = m_rows * m_cols;
+			data out = m_ptr[0];
+
+			for (size_t i = 1; i < count; ++i)
+				if (out > m_ptr[i]) out = m_ptr[i];
+
+			return out;
+		}
+		break;
+		case mode::rows:
+		{
+			if (n >= m_rows) return data();
+
+			size_t ci = n * m_cols + 1;
+			data out = get_val(n, 0);
+
+			for (size_t i = 1; i < m_cols; ++i, ++ci)
+				if (out > m_ptr[ci]) out = m_ptr[ci];
+
+			return out;
+		}
+		break;
+		case mode::cols:
+		{
+			if (n >= m_cols) return data();
+
+			size_t ci = n + m_cols;
+			data out = get_val(0, n);
+
+			for (size_t i = 1; i < m_rows; ++i, ci += m_cols)
+				if (out > m_ptr[ci]) out = m_ptr[ci];
+
+			return out;
+		}
+		break;
+	}
 }
 
 template<typename data>
@@ -351,7 +443,7 @@ bool matrix<data>::load(const std::string& path)
 template<typename data>
 bool matrix<data>::save(const std::string& path, std::streamsize prec) const
 {
-	std::ofstream file(path);
+	std::ofstream file(path, std::ios::trunc);
 	file.precision(prec);
 
 	return save(file);
@@ -475,14 +567,50 @@ template<typename data>
 matrix<data> matrix<data>::transpose(void) const
 {
 	const size_t count = m_rows * m_cols;
-	matrix<data> tmp(m_cols, m_rows);
+	matrix<data> out(m_cols, m_rows);
 
      #pragma omp parallel for collapse(2) if(count > m_ompmin)
 	for (size_t i = 0; i < m_rows; ++i)
 		for (size_t j = 0; j < m_cols; ++j)
-			tmp.set_val(j, i, get_val(i, j));
+			out.set_val(j, i, get_val(i, j));
 
-	return tmp;
+	return out;
+}
+
+template<typename data>
+matrix<data> matrix<data>::normalize(void) const&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+	matrix<data> out(m_rows, m_cols);
+	data max = m_ptr[0];
+
+	for (size_t i = 1; i < count; ++i)
+		if (max < m_ptr[i]) max = m_ptr[i];
+
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)
+		out.m_ptr[i] = m_ptr[i] / max;
+
+	return out;
+}
+
+template<typename data>
+matrix<data> matrix<data>::normalize(void) &&
+{
+	if (m_ptr == nullptr) return matrix<data>();
+
+	const size_t count = m_rows * m_cols;
+	data max = m_ptr[0];
+
+	for (size_t i = 1; i < count; ++i)
+		if (max < m_ptr[i]) max = m_ptr[i];
+
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i)  m_ptr[i] /= max;
+
+	return std::move(*this);
 }
 
 template<typename data>
@@ -490,14 +618,14 @@ matrix<data> matrix<data>::diagonal(matrix<data>::mode mod) const
 {
 	if (m_rows != m_cols) return matrix<data>();
 
-	matrix<data> tmp = mod == mode::rows ?
+	matrix<data> out = mod == mode::rows ?
 	                        matrix<data>(1, m_cols) :
 	                        matrix<data>(m_rows, 1);
 
      #pragma omp parallel for if(m_cols >= m_ompmin)
-	for (size_t i = 0; i < m_cols; ++i) tmp.m_ptr[i] = get_val(i, i);
+	for (size_t i = 0; i < m_cols; ++i) out.m_ptr[i] = get_val(i, i);
 
-	return tmp;
+	return out;
 }
 
 template<typename data>
