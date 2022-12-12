@@ -24,7 +24,6 @@
 #include <iostream>
 
 #include "matrix.hpp"
-#include "helper.hpp"
 
 int main(int argc, char* args[])
 {
@@ -36,6 +35,8 @@ int main(int argc, char* args[])
 	const matrix<int> d(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 10 });
 	const matrix<int> e(4, 4, { 9, 3, 3, 4, 5, 6, 7, 8, 9, 11, 11, 12, 13, 14, 15, 16 });
 
+	const auto fun = [] (int a) { return a*3; };
+
 	if (a.det() != -2) endtest(n, ok);
 	if (b.det() != 5) endtest(n, ok);
 	if (c.det() != 0) endtest(n, ok);
@@ -44,8 +45,6 @@ int main(int argc, char* args[])
 
 	if (e.min() != 3) endtest(n, ok);
 	if (e.max() != 16) endtest(n, ok);
-
-	print_matrix(e);
 
 	if (e.min(0, decltype(e)::mode::rows) != 3) endtest(n, ok);
 	if (e.max(0, decltype(e)::mode::rows) != 9) endtest(n, ok);
@@ -58,6 +57,8 @@ int main(int argc, char* args[])
 
 	if (e.min(3, decltype(e)::mode::cols) != 4) endtest(n, ok);
 	if (e.max(3, decltype(e)::mode::cols) != 16) endtest(n, ok);
+
+	if (e.apply(fun) != e*3) endtest(n, ok);
 
 	return !(n == ok);
 }
