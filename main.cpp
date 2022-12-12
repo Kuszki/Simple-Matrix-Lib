@@ -43,38 +43,28 @@ double test_speed(const size_t size, const size_t iters)
 }
 
 template<typename data, typename base = long double>
-matrix<base> test_diff(const matrix<long double>& mat,
-                       const size_t iters = 1e5,
-                       const base min = -1.0l,
-                       const base max = 1.0l)
+matrix<long double> test_diff(const matrix<long double>& mat,
+                              const size_t iters = 1e5,
+                              const base min = -1.0l,
+                              const base max = 1.0l)
 {
 	const size_t osize = mat.size();
 
-	matrix<base> vmat(1, osize * iters);
+	matrix<base> vmat(1, iters);
 	matrix<base> imat = mat.transpose();
-	matrix<base> omat;
 
 	const matrix<data> s_mat = mat;
-	matrix<data>s_imat, s_omat;
 
-     #pragma omp parallel for default(shared) \
-	     firstprivate(imat, omat, s_imat, s_omat)
+     #pragma omp parallel for default(shared) firstprivate(imat)
 	for (size_t i = 0; i < iters; ++i)
 	{
 		randomize_matrix(imat, min, max);
 
-		size_t index = i * osize;
-		s_imat = matrix<data>(imat);
-		s_omat = s_mat * s_imat;
+		matrix<data> s_imat = imat;
 
-		omat = mat * imat;
-		omat -= s_omat;
-
-		for (size_t k = 0; k < omat.rows(); ++k)
-			for (size_t l = 0; l < omat.cols(); ++l)
-			{
-				vmat(0, index++) = omat(k, l);
-			}
+		vmat(0, i) =
+		          (s_mat * s_imat)(0, 0) -
+		          (mat * imat)(0, 0);
 	}
 
 	return vmat;
@@ -111,7 +101,7 @@ int main(int argc, char* args[])
 	const std::string path = "db2_2_16.txt";
 	const matrix<long double> mat(path);
 
-	test_diff<_Float16>(mat.get_row(1), iters).normalize().save("test.txt", 5);
+	test_diff<_Float16, __float128>(mat.get_row(1), iters).save("test.txt", 3);
 
 //	std::cout << "out\tfloat16\tfloat32\tfloat64\n";
 
