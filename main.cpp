@@ -43,10 +43,10 @@ double test_speed(const size_t size, const size_t iters)
 }
 
 template<typename data, typename base = long double>
-matrix<long double> test_diff(const matrix<long double>& mat,
-                              const size_t iters = 1e5,
-                              const base min = -1.0l,
-                              const base max = 1.0l)
+matrix<base> test_diff(const matrix<base>& mat,
+                       const size_t iters = 1e5,
+                       const base min = -1.0l,
+                       const base max = 1.0l)
 {
 	const size_t osize = mat.size();
 
@@ -98,10 +98,10 @@ int main(int argc, char* args[])
 //		std::cout << i << "\t" << test_speed<long double>(i, 50) << std::endl;
 //	}
 
-	const std::string path = "db2_2_16.txt";
-	const matrix<long double> mat(path);
+//	const std::string path = "db2_2_16.txt";
+//	const matrix<long double> mat(path);
 
-	test_diff<_Float16, __float128>(mat.get_row(1), iters).save("test.txt", 3);
+//	test_diff<float, long double>(mat.get_row(1), iters).save("test.txt", 3);
 
 //	std::cout << "out\tfloat16\tfloat32\tfloat64\n";
 
