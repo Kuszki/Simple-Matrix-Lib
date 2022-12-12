@@ -44,33 +44,43 @@ double test_speed(const size_t size, const size_t iters)
 	return duration_cast<milliseconds>(stop - start).count() / 1000.0;
 }
 
-template<typename data>
-double test_diff(const matrix<long double>& mat,
-                 const size_t iters = 1e5,
-                 long double min = -1.0l,
-                 long double max = 1.0l,
-                 const bool vector = true)
+template<typename data, typename base = long double>
+long double test_diff(const matrix<long double>& mat,
+                      const size_t iters = 1e5,
+                      const base min = -1.0l,
+                      const base max = 1.0l)
 {
-	matrix<long double> imat(mat.rows(), vector ? 1 : mat.cols()), omat;
+	const size_t osize = mat.size();
+
+	matrix<base> vmat(1, osize * iters);
+	matrix<base> imat = mat.transpose();
+	matrix<base> omat;
+
 	const matrix<data> s_mat = mat;
 	matrix<data>s_imat, s_omat;
 
-	long double diff = 0.0;
-
-	for (int i = 0; i < iters; ++i)
+     #pragma omp parallel for default(none) \
+	     shared(mat, vmat, s_mat, iters, osize, min, max) \
+	     firstprivate(imat, omat, s_imat, s_omat)
+	for (size_t i = 0; i < iters; ++i)
 	{
-		randomize_matrix(imat, min, min);
+		randomize_matrix(imat, min, max);
 
+		size_t index = i * osize;
 		s_imat = matrix<data>(imat);
 		s_omat = s_mat * s_imat;
 
 		omat = mat * imat;
 		omat -= s_omat;
 
-		diff += omat.var();
+		for (size_t k = 0; k < omat.rows(); ++k)
+			for (size_t l = 0; l < omat.cols(); ++l)
+			{
+				vmat(0, index++) = omat(k, l);
+			}
 	}
 
-	return diff;
+	return vmat.var() / iters;
 }
 
 void print_finfo(void)
@@ -99,9 +109,12 @@ int main(int argc, char* args[])
 //		std::cout << i << "\t" << test_speed<long double>(i, 50) << std::endl;
 //	}
 
-	matrix<long double> mat("db2_2_32.txt");
+	matrix<long double> mat("db2_2_16.txt");
 
-	std::cout << test_diff<double>(mat) << std::endl;
+	for (size_t i = 0; i < mat.rows(); ++i)
+	{
+		std::cout << (i) << "\t" << test_diff<float>(mat.get_row(i)) << std::endl;
+	}
 
 	return 0;
 }

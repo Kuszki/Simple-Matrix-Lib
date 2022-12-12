@@ -46,7 +46,7 @@ void print_matrix(const matrix<__float128>& m)
 	{
 		for (int j = 0; j < m.cols(); ++j)
 		{
-			std::cout << (double) m(i, j) << "\t";
+			std::cout << (long double) m(i, j) << "\t";
 		}
 		std::cout << std::endl;
 	}
