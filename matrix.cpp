@@ -301,6 +301,8 @@ data matrix<data>::max(size_t n, mode mod) const
 		}
 		break;
 	}
+
+	return data();
 }
 
 template<typename data>
@@ -347,6 +349,8 @@ data matrix<data>::min(size_t n, mode mod) const
 		}
 		break;
 	}
+
+	return data();
 }
 
 template<typename data>
