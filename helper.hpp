@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                         *
- *  {description}                                                          *
+ *  Simple matrix implementation for simulation purposes                   *
  *  Copyright (C) 2022  Łukasz "Kuszki" Dróżdż  lukasz.kuszki@gmail.com    *
  *                                                                         *
  *  This program is free software: you can redistribute it and/or modify   *
