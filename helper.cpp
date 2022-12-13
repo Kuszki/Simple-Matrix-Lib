@@ -90,9 +90,9 @@ void randomize_matrix(matrix<data>& m, data min, data max)
 template<>
 void randomize_matrix(matrix<__float128>& m, __float128 min, __float128 max)
 {
-	std::uniform_real_distribution<long double> dis(min, max);
-	std::random_device rd;
-	std::mt19937 gen(rd());
+	static thread_local std::uniform_real_distribution<long double> dis(min, max);
+	static thread_local std::random_device rd;
+	static thread_local std::mt19937 gen(rd());
 
 	for (int i = 0; i < m.rows(); ++i)
 	{
