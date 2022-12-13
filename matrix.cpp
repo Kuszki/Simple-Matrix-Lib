@@ -800,7 +800,7 @@ const data& matrix<data>::operator() (size_t row, size_t col) const
 }
 
 template<typename data>
-matrix<data> matrix<data>::operator- (void) const
+matrix<data> matrix<data>::operator- (void) const&
 {
 	const size_t count = m_rows * m_cols;
 	matrix<data> res(m_rows, m_cols);
@@ -809,6 +809,16 @@ matrix<data> matrix<data>::operator- (void) const
 	for (size_t i = 0; i < count; ++i) res.m_ptr[i] = -m_ptr[i];
 
 	return res;
+}
+
+template<typename data>
+matrix<data> matrix<data>::operator- (void) &&
+{
+	const size_t count = m_rows * m_cols;
+     #pragma omp parallel for if(count > m_ompmin)
+	for (size_t i = 0; i < count; ++i) m_ptr[i] = -m_ptr[i];
+
+	return std::move(*this);
 }
 
 template<typename data> template<typename type>
@@ -1240,6 +1250,42 @@ matrix<data> matrix<data>::gen_linsp(size_t rows, size_t cols, const data& start
 	}
 
 	return out;
+}
+
+template<typename data>
+matrix<data> operator+ (const data& other, const matrix<data>& mat)
+{
+	return mat + other;
+}
+
+template<typename data>
+matrix<data> operator+ (const data& other, matrix<data>&& mat)
+{
+	return std::move(mat) + other;
+}
+
+template<typename data>
+matrix<data> operator- (const data& other, const matrix<data>& mat)
+{
+	return mat - other;
+}
+
+template<typename data>
+matrix<data> operator- (const data& other, matrix<data>&& mat)
+{
+	return -std::move(mat) + other;
+}
+
+template<typename data>
+matrix<data> operator* (const data& other, const matrix<data>& mat)
+{
+	return mat * other;
+}
+
+template<typename data>
+matrix<data> operator* (const data& other, matrix<data>&& mat)
+{
+	return std::move(mat) * other;
 }
 
 #endif

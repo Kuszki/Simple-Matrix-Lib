@@ -58,7 +58,7 @@ int main(int argc, char* args[])
 	if (e.min(3, decltype(e)::mode::cols) != 4) endtest(n, ok);
 	if (e.max(3, decltype(e)::mode::cols) != 16) endtest(n, ok);
 
-	if (e.apply(fun) != e*3) endtest(n, ok);
+	if (e.apply(fun) != 3*e) endtest(n, ok);
 
 	return !(n == ok);
 }

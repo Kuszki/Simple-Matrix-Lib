@@ -215,7 +215,8 @@ class matrix
 		data& operator() (size_t row, size_t col);
 		const data& operator() (size_t row, size_t col) const;
 
-		matrix<data> operator- (void) const;
+		matrix<data> operator- (void) const&;
+		matrix<data> operator- (void) &&;
 
 		template<typename type> friend class matrix;
 
