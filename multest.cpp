@@ -27,31 +27,31 @@
 
 int main(int argc, char* args[])
 {
-     int n = 0, ok = 0;
+	int n = 0, ok = 0;
 
-     const matrix<int> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
-     const matrix<int> b(2, 3, { 1, 2, 3, 4, 5, 6 });
-     const matrix<int> g(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+	const matrix<int> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
+	const matrix<int> b(2, 3, { 1, 2, 3, 4, 5, 6 });
+	const matrix<int> g(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
 
-     const matrix<int> r1(4, 3, { 9, 12, 15, 19, 26, 33, 29, 40, 51, 39, 54, 69 });
-     const matrix<int> r2(4, 2, { 2, 4, 6, 8, 10, 12, 14, 16 });
-     const matrix<int> r3(4, 3, { 162, 198, 234, 354, 432, 510, 546, 666, 786, 738, 900, 1062 });
+	const matrix<int> r1(4, 3, { 9, 12, 15, 19, 26, 33, 29, 40, 51, 39, 54, 69 });
+	const matrix<int> r2(4, 2, { 2, 4, 6, 8, 10, 12, 14, 16 });
+	const matrix<int> r3(4, 3, { 162, 198, 234, 354, 432, 510, 546, 666, 786, 738, 900, 1062 });
 
-     const auto h = a * b * g;
-     const auto c = a * b;
-     auto d = a; d *= b;
+	const auto h = a * b * g;
+	const auto c = a * b;
+	auto d = a; d *= b;
 
-     if (r1 != c || r1 != d) endtest(n, ok);
-     if (r1 != a * b) endtest(n, ok);
-     if (r3 != h) endtest(n, ok);
+	if (r1 != c || r1 != d) endtest(n, ok);
+	if (r1 != a * b) endtest(n, ok);
+	if (r3 != h) endtest(n, ok);
 
-     const auto e = a * 2;
-     auto f = a; f *= 2;
+	const auto e = a * 2;
+	auto f = a; f *= 2;
 
-     if (r2 != e || r2 != f) endtest(n, ok);
+	if (r2 != e || r2 != f) endtest(n, ok);
 
-     if (a * -1 != -a) endtest(n, ok);
-     if (b * -1 != -b) endtest(n, ok);
+	if (a * -1 != -a) endtest(n, ok);
+	if (b * -1 != -b) endtest(n, ok);
 
-     return !(n == ok);
+	return !(n == ok);
 }

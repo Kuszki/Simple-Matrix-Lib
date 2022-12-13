@@ -28,70 +28,70 @@
 template<typename data>
 double test_speed(const size_t size, const size_t iters)
 {
-     using namespace std::chrono;
+	using namespace std::chrono;
 
-     matrix<data> a(size, size), b(size, size), c;
+	matrix<data> a(size, size), b(size, size), c;
 
-     randomize_matrix(a, data(-1.0), data(1.0));
-     randomize_matrix(b, data(-1.0), data(1.0));
+	randomize_matrix(a, data(-1.0), data(1.0));
+	randomize_matrix(b, data(-1.0), data(1.0));
 
-     auto start = system_clock::now();
-     for (size_t i = 0; i < iters; ++i) c = a * b;
-     auto stop = system_clock::now();
+	auto start = system_clock::now();
+	for (size_t i = 0; i < iters; ++i) c = a * b;
+	auto stop = system_clock::now();
 
-     return duration_cast<milliseconds>(stop - start).count() / 1000.0;
+	return duration_cast<milliseconds>(stop - start).count() / 1000.0;
 }
 
 template<typename data, typename base = long double>
 matrix<base> test_diff(const matrix<base>& mat,
-                       const size_t iters = 1e5,
-                       const base min = -1.0l,
-                       const base max = 1.0l)
+				   const size_t iters = 1e5,
+				   const base min = -1.0l,
+				   const base max = 1.0l)
 {
-     const size_t osize = mat.size();
+	const size_t osize = mat.size();
 
-     matrix<base> vmat(1, iters);
-     matrix<base> imat = mat.transpose();
+	matrix<base> vmat(1, iters);
+	matrix<base> imat = mat.transpose();
 
-     const matrix<data> s_mat = mat;
+	const matrix<data> s_mat = mat;
 
-     #pragma omp parallel for default(shared) firstprivate(imat)
-     for (size_t i = 0; i < iters; ++i)
-     {
-          randomize_matrix(imat, min, max);
+	#pragma omp parallel for default(shared) firstprivate(imat)
+	for (size_t i = 0; i < iters; ++i)
+	{
+		randomize_matrix(imat, min, max);
 
-          matrix<data> s_imat = imat;
+		matrix<data> s_imat = imat;
 
-          vmat(0, i) =
-                    (s_mat * s_imat)(0, 0) -
-                    (mat * imat)(0, 0);
-     }
+		vmat(0, i) =
+				(s_mat * s_imat)(0, 0) -
+				(mat * imat)(0, 0);
+	}
 
-     return vmat;
+	return vmat;
 }
 
 void print_finfo(void)
 {
-     #if __GNUC__ && !__clang__
-     std::cout << sizeof(__float128) << " " << sizeof(long double) << " "
-               << std::is_same<long double, __float128>::value << std::endl;
+	#if __GNUC__ && !__clang__
+	std::cout << sizeof(__float128) << " " << sizeof(long double) << " "
+			<< std::is_same<long double, __float128>::value << std::endl;
 
-     std::cout << sizeof(__float80) << " " << sizeof(long double) << " "
-               << std::is_same<long double, __float80>::value << std::endl;
-     #endif
+	std::cout << sizeof(__float80) << " " << sizeof(long double) << " "
+			<< std::is_same<long double, __float80>::value << std::endl;
+	#endif
 
-     std::cout << sizeof(_Float64) << " " << sizeof(double) << " "
-               << std::is_same<double, _Float64>::value << std::endl;
+	std::cout << sizeof(_Float64) << " " << sizeof(double) << " "
+			<< std::is_same<double, _Float64>::value << std::endl;
 
-     std::cout << sizeof(_Float32) << " " << sizeof(float) << " "
-               << std::is_same<float, _Float32>::value << std::endl;
+	std::cout << sizeof(_Float32) << " " << sizeof(float) << " "
+			<< std::is_same<float, _Float32>::value << std::endl;
 }
 
 int main(int argc, char* args[])
 {
-     std::cout.precision(2);
+	std::cout.precision(2);
 
-     const size_t iters = 1e6;
+	const size_t iters = 1e6;
 
 //	for (size_t i = 16; i <= 2048; i *= 2)
 //	{
@@ -124,5 +124,5 @@ int main(int argc, char* args[])
 //		mat.save(file);
 //	}
 
-     return 0;
+	return 0;
 }

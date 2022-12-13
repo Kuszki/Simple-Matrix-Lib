@@ -27,23 +27,23 @@
 
 int main(int, char*[])
 {
-     int n = 0, ok = 0;
+	int n = 0, ok = 0;
 
-     const matrix<int> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
-     const matrix<int> b(4, 2, { 9, 0, 1, 2, 3, 4, 5, 6 });
+	const matrix<int> a(4, 2, { 1, 2, 3, 4, 5, 6, 7, 8 });
+	const matrix<int> b(4, 2, { 9, 0, 1, 2, 3, 4, 5, 6 });
 
-     const matrix<int> r1(4, 2, { 10, 2, 4, 6, 8, 10, 12, 14 });
-     const matrix<int> r2(4, 2, { 11, 12, 13, 14, 15, 16, 17, 18 });
+	const matrix<int> r1(4, 2, { 10, 2, 4, 6, 8, 10, 12, 14 });
+	const matrix<int> r2(4, 2, { 11, 12, 13, 14, 15, 16, 17, 18 });
 
-     const auto c = a + b;
-     auto d = a; d += b;
+	const auto c = a + b;
+	auto d = a; d += b;
 
-     if (r1 != c || r1 != d) endtest(n, ok);
+	if (r1 != c || r1 != d) endtest(n, ok);
 
-     const auto e = a + 10;
-     auto f = a; f += 10;
+	const auto e = a + 10;
+	auto f = a; f += 10;
 
-     if (r2 != e || r2 != f) endtest(n, ok);
+	if (r2 != e || r2 != f) endtest(n, ok);
 
-     return !(n == ok);
+	return !(n == ok);
 }

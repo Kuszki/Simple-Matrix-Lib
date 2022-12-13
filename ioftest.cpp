@@ -27,19 +27,19 @@
 
 int main(int argc, char* args[])
 {
-     int n = 0, ok = 0;
+	int n = 0, ok = 0;
 
-     const matrix<int> a(2, 2, { 1, 2, 3, 4 });
-     const matrix<int> b(1, 1, { 5 });
-     const matrix<int> c(2, 1, { 1, 2 });
-     const matrix<int> d(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 10 });
-     const matrix<int> e(4, 4, { 9, 3, 3, 4, 5, 6, 7, 8, 9, 11, 11, 12, 13, 14, 15, 16 });
+	const matrix<int> a(2, 2, { 1, 2, 3, 4 });
+	const matrix<int> b(1, 1, { 5 });
+	const matrix<int> c(2, 1, { 1, 2 });
+	const matrix<int> d(3, 3, { 1, 2, 3, 4, 5, 6, 7, 8, 10 });
+	const matrix<int> e(4, 4, { 9, 3, 3, 4, 5, 6, 7, 8, 9, 11, 11, 12, 13, 14, 15, 16 });
 
-     if (!a.save("a.txt") || a != matrix<int>("a.txt")) endtest(n, ok);
-     if (!b.save("b.txt") || b != matrix<int>("b.txt")) endtest(n, ok);
-     if (!c.save("c.txt") || c != matrix<int>("c.txt")) endtest(n, ok);
-     if (!d.save("d.txt") || d != matrix<int>("d.txt")) endtest(n, ok);
-     if (!e.save("e.txt") || e != matrix<int>("e.txt")) endtest(n, ok);
+	if (!a.save("a.txt") || a != matrix<int>("a.txt")) endtest(n, ok);
+	if (!b.save("b.txt") || b != matrix<int>("b.txt")) endtest(n, ok);
+	if (!c.save("c.txt") || c != matrix<int>("c.txt")) endtest(n, ok);
+	if (!d.save("d.txt") || d != matrix<int>("d.txt")) endtest(n, ok);
+	if (!e.save("e.txt") || e != matrix<int>("e.txt")) endtest(n, ok);
 
-     return !(n == ok);
+	return !(n == ok);
 }
