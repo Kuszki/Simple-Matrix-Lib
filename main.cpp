@@ -44,9 +44,9 @@ double test_speed(const size_t size, const size_t iters)
 
 template<typename data, typename base = long double>
 matrix<base> test_diff(const matrix<base>& mat,
-                       const size_t iters = 1e5,
-                       const base min = -1.0l,
-                       const base max = 1.0l)
+				   const size_t iters = 1e5,
+				   const base min = -1.0l,
+				   const base max = 1.0l)
 {
 	const size_t osize = mat.size();
 
@@ -55,7 +55,7 @@ matrix<base> test_diff(const matrix<base>& mat,
 
 	const matrix<data> s_mat = mat;
 
-     #pragma omp parallel for default(shared) firstprivate(imat)
+	#pragma omp parallel for default(shared) firstprivate(imat)
 	for (size_t i = 0; i < iters; ++i)
 	{
 		randomize_matrix(imat, min, max);
@@ -63,8 +63,8 @@ matrix<base> test_diff(const matrix<base>& mat,
 		matrix<data> s_imat = imat;
 
 		vmat(0, i) =
-		          (s_mat * s_imat)(0, 0) -
-		          (mat * imat)(0, 0);
+				(s_mat * s_imat)(0, 0) -
+				(mat * imat)(0, 0);
 	}
 
 	return vmat;
@@ -72,19 +72,19 @@ matrix<base> test_diff(const matrix<base>& mat,
 
 void print_finfo(void)
 {
-     #if __GNUC__ && !__clang__
+	#if __GNUC__ && !__clang__
 	std::cout << sizeof(__float128) << " " << sizeof(long double) << " "
-	          << std::is_same<long double, __float128>::value << std::endl;
+			<< std::is_same<long double, __float128>::value << std::endl;
 
 	std::cout << sizeof(__float80) << " " << sizeof(long double) << " "
-	          << std::is_same<long double, __float80>::value << std::endl;
-     #endif
+			<< std::is_same<long double, __float80>::value << std::endl;
+	#endif
 
 	std::cout << sizeof(_Float64) << " " << sizeof(double) << " "
-	          << std::is_same<double, _Float64>::value << std::endl;
+			<< std::is_same<double, _Float64>::value << std::endl;
 
 	std::cout << sizeof(_Float32) << " " << sizeof(float) << " "
-	          << std::is_same<float, _Float32>::value << std::endl;
+			<< std::is_same<float, _Float32>::value << std::endl;
 }
 
 int main(int argc, char* args[])
