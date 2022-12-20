@@ -98,11 +98,11 @@ int main(int argc, char* args[])
 //		std::cout << i << "\t" << test_speed<long double>(i, 50) << std::endl;
 //	}
 
-	const std::string path = "vec_coif5/coif5_5_1024.txt";
-	const matrix<long double> mat(path);
+//	const std::string path = "vec_coif5/coif5_5_1024.txt";
+//	const matrix<long double> mat(path);
 
-	test_diff<_Float16>(mat, iters).save("coif5_f16.txt", 100);
-	test_diff<_Float32>(mat, iters).save("coif5_f32.txt", 100);
+//	test_diff<_Float16>(mat, iters).save("coif5_f16.txt", 100);
+//	test_diff<_Float32>(mat, iters).save("coif5_f32.txt", 100);
 
 //	for (size_t i = 0; i < mat.rows(); ++i)
 //	{
