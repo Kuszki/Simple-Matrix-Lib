@@ -91,38 +91,58 @@ int main(int argc, char* args[])
 {
 	std::cout.precision(2);
 
-	const size_t iters = 1e6;
+	const size_t iters = 1e5;
 
 //	for (size_t i = 16; i <= 2048; i *= 2)
 //	{
 //		std::cout << i << "\t" << test_speed<long double>(i, 50) << std::endl;
 //	}
 
-//	const std::string path = "db2_2_16.txt";
-//	const matrix<long double> mat(path);
+	const std::string path = "vec_coif5/coif5_5_1024.txt";
+	const matrix<long double> mat(path);
 
-//	test_diff<float, long double>(mat.get_row(1), iters).save("test.txt", 3);
-
-//	std::cout << "out\tfloat16\tfloat32\tfloat64\n";
+	test_diff<_Float16>(mat, iters).save("coif5_f16.txt", 100);
+	test_diff<_Float32>(mat, iters).save("coif5_f32.txt", 100);
 
 //	for (size_t i = 0; i < mat.rows(); ++i)
 //	{
 //		const auto row = mat.get_row(i);
 
-//		std::cout << std::fixed << (i) << "\t" << std::scientific
-//		          << test_diff<_Float16>(row, iters).var() / iters << "\t"
-//		          << test_diff<_Float32>(row, iters).var() / iters << "\t"
-//		          << test_diff<_Float64>(row, iters).var() / iters << "\n";
+//		std::cout << std::fixed << (i+1) << "\t" << std::scientific
+//				<< test_diff<_Float32>(row, iters, 3.0l, 9.0l).var() << "\n";
 //	}
 
-//	matrix<long double> mat(1, 32);
-//	std::ofstream file("test.txt");
+//	const std::vector<int> ndec = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+//	const std::vector<int> nsam = { 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
 
-//	for (size_t i = 0; i < 1000; ++i)
+//	std::cout << "nsam";
+//	for (const auto& j : ndec) std::cout << std::fixed << "\t" << j;
+//	std::cout << std::endl;
+
+//	for (const auto& i : nsam)
 //	{
-//		randomize_matrix(mat, -1.0l, 1.0l);
-//		mat.save(file);
+//		std::cout << std::fixed << i;
+
+//		for (const auto& j : ndec)
+//		{
+//			if (double(i) / std::pow(2.0, j) >= 1)
+//			{
+//				const std::string path =
+//						std::string("vec_coif5/coif5_") +
+//						std::to_string(j) + std::string("_") +
+//						std::to_string(i) + std::string(".txt");
+
+//				const matrix<long double> mat(path);
+
+//				std::cout << "\t" << std::scientific
+//						<< test_diff<_Float32>(mat, iters).var();
+//			}
+//		}
+
+//		std::cout << std::fixed << std::endl;
 //	}
+
+//	std::cout << std::endl;
 
 	return 0;
 }
