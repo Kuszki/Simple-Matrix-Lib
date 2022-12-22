@@ -10,7 +10,7 @@ find_package(OpenMP)
 include_directories(${OpenMP_INCLUDE_DIR})
 link_directories(${OpenMP_LIBRARY_DIR})
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} INTERFACE
 	matrix.cpp matrix.hpp)
 
 add_executable(test_main main.cpp
@@ -35,7 +35,6 @@ add_test(NAME operations COMMAND test_ops)
 add_test(NAME maths COMMAND test_mat)
 add_test(NAME files COMMAND test_iof)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(test_main PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(test_bas PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(test_add PUBLIC OpenMP::OpenMP_CXX)
