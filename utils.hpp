@@ -18,38 +18,18 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef HELPER_HPP
-#define HELPER_HPP
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
-#include <iostream>
-#include <fstream>
-#include <random>
-#include <chrono>
+#include <utility>
+#include <vector>
+#include <cstddef>
+#include <cmath>
 
-#include "matrix.hpp"
+#include "helper.hpp"
 
-template<typename data>
-void print_matrix(const matrix<data>& m);
+std::vector<std::pair<size_t, size_t>> get_fwt_levels(size_t count, size_t dec);
 
-template<typename data>
-requires std::is_floating_point_v<data>
-void randomize_matrix(matrix<data>& m, data min, data max);
+void print_finfo(void);
 
-template<typename data>
-requires std::is_integral_v<data>
-void randomize_matrix(matrix<data>& m, data min, data max);
-
-template<typename data>
-double test_speed(const size_t size, const size_t iters);
-
-template<typename data, typename base = long double>
-matrix<base> test_diff(const matrix<base>& mat,
-				   const size_t iters = 1e5,
-				   const base min = -1.0l,
-				   const base max = 1.0l);
-
-#ifndef HELPER_CPP
-#include "helper.cpp"
-#endif
-
-#endif // HELPER_HPP
+#endif // UTILS_HPP

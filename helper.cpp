@@ -39,20 +39,6 @@ void print_matrix(const matrix<data>& m)
 	std::cout << std::endl;
 }
 
-template<>
-void print_matrix(const matrix<__float128>& m)
-{
-	for (int i = 0; i < m.rows(); ++i)
-	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			std::cout << (long double) m(i, j) << "\t";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-}
-
 template<typename data>
 requires std::is_floating_point_v<data>
 void randomize_matrix(matrix<data>& m, data min, data max)
@@ -87,20 +73,49 @@ void randomize_matrix(matrix<data>& m, data min, data max)
 	}
 }
 
-template<>
-void randomize_matrix(matrix<__float128>& m, __float128 min, __float128 max)
+template<typename data>
+double test_speed(const size_t size, const size_t iters)
 {
-	static thread_local std::uniform_real_distribution<long double> dis(min, max);
-	static thread_local std::random_device rd;
-	static thread_local std::mt19937 gen(rd());
+	using namespace std::chrono;
 
-	for (int i = 0; i < m.rows(); ++i)
+	matrix<data> a(size, size), b(size, size), c;
+
+	randomize_matrix(a, data(-1.0), data(1.0));
+	randomize_matrix(b, data(-1.0), data(1.0));
+
+	auto start = system_clock::now();
+	for (size_t i = 0; i < iters; ++i) c = a * b;
+	auto stop = system_clock::now();
+
+	return duration_cast<milliseconds>(stop - start).count() / 1000.0;
+}
+
+template<typename data, typename base>
+matrix<base> test_diff(const matrix<base>& mat,
+				   const size_t iters,
+				   const base min,
+				   const base max)
+{
+	const size_t osize = mat.size();
+
+	matrix<base> vmat(1, iters);
+	matrix<base> imat = mat.transpose();
+
+	const matrix<data> s_mat = mat;
+
+	#pragma omp parallel for default(shared) firstprivate(imat)
+	for (size_t i = 0; i < iters; ++i)
 	{
-		for (int j = 0; j < m.cols(); ++j)
-		{
-			m(i, j) = (__float128) dis(gen);
-		}
+		randomize_matrix(imat, min, max);
+
+		matrix<data> s_imat = imat;
+
+		vmat(0, i) =
+				(s_mat * s_imat)(0, 0) -
+				(mat * imat)(0, 0);
 	}
+
+	return vmat;
 }
 
 #endif

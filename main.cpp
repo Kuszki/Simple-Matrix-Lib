@@ -18,131 +18,156 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <chrono>
-
-#include "matrix.hpp"
-#include "helper.hpp"
-
-// -mlong-double-128 -lquadmath -m128bit-long-double
+#include "utils.hpp"
 
 template<typename data>
-double test_speed(const size_t size, const size_t iters)
-{
-	using namespace std::chrono;
-
-	matrix<data> a(size, size), b(size, size), c;
-
-	randomize_matrix(a, data(-1.0), data(1.0));
-	randomize_matrix(b, data(-1.0), data(1.0));
-
-	auto start = system_clock::now();
-	for (size_t i = 0; i < iters; ++i) c = a * b;
-	auto stop = system_clock::now();
-
-	return duration_cast<milliseconds>(stop - start).count() / 1000.0;
-}
+void speedtest(const size_t start = 16,
+			const size_t stop = 4096,
+			const size_t iters = 50);
 
 template<typename data, typename base = long double>
-matrix<base> test_diff(const matrix<base>& mat,
-				   const size_t iters = 1e5,
-				   const base min = -1.0l,
-				   const base max = 1.0l)
-{
-	const size_t osize = mat.size();
+void vartestall(const std::string& wname,
+			 const size_t ndec,
+			 const size_t count,
+			 const size_t iters = 1e5,
+			 const base min = base(-1),
+			 const base max = base(1));
 
-	matrix<base> vmat(1, iters);
-	matrix<base> imat = mat.transpose();
+template<typename data, typename base = long double>
+void vartestranges(const std::string& wname,
+			    const size_t ndec,
+			    const size_t count,
+			    const size_t iters = 1e5,
+			    const base min = base(-1),
+			    const base max = base(1));
 
-	const matrix<data> s_mat = mat;
-
-	#pragma omp parallel for default(shared) firstprivate(imat)
-	for (size_t i = 0; i < iters; ++i)
-	{
-		randomize_matrix(imat, min, max);
-
-		matrix<data> s_imat = imat;
-
-		vmat(0, i) =
-				(s_mat * s_imat)(0, 0) -
-				(mat * imat)(0, 0);
-	}
-
-	return vmat;
-}
-
-void print_finfo(void)
-{
-	#if __GNUC__ && !__clang__
-	std::cout << sizeof(__float128) << " " << sizeof(long double) << " "
-			<< std::is_same<long double, __float128>::value << std::endl;
-
-	std::cout << sizeof(__float80) << " " << sizeof(long double) << " "
-			<< std::is_same<long double, __float80>::value << std::endl;
-	#endif
-
-	std::cout << sizeof(_Float64) << " " << sizeof(double) << " "
-			<< std::is_same<double, _Float64>::value << std::endl;
-
-	std::cout << sizeof(_Float32) << " " << sizeof(float) << " "
-			<< std::is_same<float, _Float32>::value << std::endl;
-}
+template<typename data, typename base = long double>
+void vartestsingle(const std::vector<int> ndec,
+			    const std::vector<int> nsam,
+			    const size_t iters = 1e5,
+			    const base min = base(-1),
+			    const base max = base(1));
 
 int main(int argc, char* args[])
 {
-	std::cout.precision(2);
-
-	const size_t iters = 1e5;
-
-//	for (size_t i = 16; i <= 2048; i *= 2)
-//	{
-//		std::cout << i << "\t" << test_speed<long double>(i, 50) << std::endl;
-//	}
-
-//	const std::string path = "vec_coif5/coif5_5_1024.txt";
-//	const matrix<long double> mat(path);
-
-//	test_diff<_Float16>(mat, iters).save("coif5_f16.txt", 100);
-//	test_diff<_Float32>(mat, iters).save("coif5_f32.txt", 100);
-
-//	for (size_t i = 0; i < mat.rows(); ++i)
-//	{
-//		const auto row = mat.get_row(i);
-
-//		std::cout << std::fixed << (i+1) << "\t" << std::scientific
-//				<< test_diff<_Float32>(row, iters, 3.0l, 9.0l).var() << "\n";
-//	}
-
 //	const std::vector<int> ndec = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 //	const std::vector<int> nsam = { 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 };
 
-//	std::cout << "nsam";
-//	for (const auto& j : ndec) std::cout << std::fixed << "\t" << j;
-//	std::cout << std::endl;
+	std::cout.precision(2);
 
-//	for (const auto& i : nsam)
-//	{
-//		std::cout << std::fixed << i;
-
-//		for (const auto& j : ndec)
-//		{
-//			if (double(i) / std::pow(2.0, j) >= 1)
-//			{
-//				const std::string path =
-//						std::string("vec_coif5/coif5_") +
-//						std::to_string(j) + std::string("_") +
-//						std::to_string(i) + std::string(".txt");
-
-//				const matrix<long double> mat(path);
-
-//				std::cout << "\t" << std::scientific
-//						<< test_diff<_Float32>(mat, iters).var();
-//			}
-//		}
-
-//		std::cout << std::fixed << std::endl;
-//	}
-
-//	std::cout << std::endl;
+	vartestranges<_Float32>("db2", 5, 1024);
 
 	return 0;
+}
+
+template<typename data>
+void speedtest(const size_t start,
+			const size_t stop,
+			const size_t iters)
+{
+	for (size_t i = start; i <= stop; i *= 2)
+	{
+		std::cout << i << "\t" << test_speed<data>(i, iters) << std::endl;
+	}
+}
+
+template<typename data, typename base>
+void vartestall(const std::string& wname,
+			 const size_t ndec,
+			 const size_t count,
+			 const size_t iters,
+			 const base min,
+			 const base max)
+{
+	const std::string path =
+			std::string("mat_") +
+			wname + std::string("/") +
+			wname + std::string("_") +
+			std::to_string(ndec) + std::string("_") +
+			std::to_string(count) + std::string(".txt");
+
+	const matrix<base> mat(path);
+
+	for (size_t i = 0; i < mat.rows(); ++i)
+	{
+		const auto var = test_diff<data, base>(mat.get_row(i), iters, min, max).var();
+		std::cout << std::fixed << (i+1) << '\t' << std::scientific << var << std::endl;
+	}
+}
+
+template<typename data, typename base>
+void vartestranges(const std::string& wname,
+			    const size_t ndec,
+			    const size_t count,
+			    const size_t iters,
+			    const base min,
+			    const base max)
+{
+	const std::string path =
+			std::string("mat_") +
+			wname + std::string("/") +
+			wname + std::string("_") +
+			std::to_string(ndec) + std::string("_") +
+			std::to_string(count) + std::string(".txt");
+
+	const auto lvls = get_fwt_levels(count, ndec);
+	const matrix<base> mat(path);
+
+	for (const auto& [start, stop] : lvls)
+	{
+		double var = 0.0;
+
+		for (size_t i = start; i <= stop; ++i)
+		{
+			var += test_diff<data, base>(mat.get_row(i), iters, min, max).var();
+		}
+
+		var /= (stop - start + 1);
+
+		std::cout << std::fixed << start << ':' << stop
+				<< '\t' << std::scientific << var
+				<< std::endl;
+	}
+}
+
+template<typename data, typename base>
+void vartestsingle(const std::string& wname,
+			    const std::vector<int> ndec,
+			    const std::vector<int> nsam,
+			    const size_t iters,
+			    const base min,
+			    const base max)
+{
+	std::cout << "nsam";
+	for (const auto& j : ndec) std::cout << std::fixed << "\t" << j;
+	std::cout << std::endl;
+
+	for (const auto& i : nsam)
+	{
+		std::cout << std::fixed << i << std::scientific;
+
+		for (const auto& j : ndec)
+		{
+			if (double(i) / std::pow(2.0, j) >= 1)
+			{
+				const std::string path =
+						std::string("vec_") +
+						wname + std::string("/") +
+						wname + std::string("_") +
+						std::to_string(j) + std::string("_") +
+						std::to_string(i) + std::string(".txt");
+
+				const matrix<base> mat(path);
+
+				std::cout << "\t" << test_diff<data, base>(mat, iters, min, max).var();
+			}
+		}
+
+		std::cout << std::fixed << std::endl;
+	}
+
+	std::cout << std::endl;
+
+	//	test_diff<_Float16>(mat, iters).save("coif5_f16.txt", 100);
+	//	test_diff<_Float32>(mat, iters).save("coif5_f32.txt", 100);
 }

@@ -10,9 +10,13 @@ find_package(OpenMP)
 include_directories(${OpenMP_INCLUDE_DIR})
 link_directories(${OpenMP_LIBRARY_DIR})
 
-add_library(${PROJECT_NAME} matrix.cpp matrix.hpp)
+add_library(${PROJECT_NAME}
+	matrix.cpp matrix.hpp)
 
-add_executable(test_main main.cpp)
+add_executable(test_main main.cpp
+	utils.hpp utils.cpp
+	helper.hpp helper.cpp)
+
 add_executable(test_bas bastest.cpp)
 add_executable(test_add addtest.cpp)
 add_executable(test_sub subtest.cpp)
@@ -41,3 +45,6 @@ target_link_libraries(test_sta PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(test_ops PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(test_mat PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(test_iof PUBLIC OpenMP::OpenMP_CXX)
+
+set_source_files_properties(helper.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(matrix.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
